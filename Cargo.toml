@@ -1,0 +1,11 @@
+[package]
+name = "novellia-takehome"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+axum = "0.8.9"
+serde = "1.0.228"
+serde_json = "1.0.149"
+tracing = "0.1.44"
+tracing-subscriber = "0.3.23"
