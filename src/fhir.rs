@@ -6,6 +6,20 @@
 
 use serde::{Deserialize, Serialize};
 
+#[derive(Debug, Clone)]
+pub enum FhirResource {
+    Patient(Patient),
+    Condition(Condition),
+    MedicationRequest(MedicationRequest),
+    Observation(Observation),
+    Procedure(Procedure),
+    Binary(Binary),
+    DocumentReference(DocumentReference),
+    ClinicalNote(ClinicalNote),
+    Unknown { resource_type: String, id: Option<String>},
+}
+
+
 /// An individual receiving or registered for healthcare services.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Patient {
@@ -154,6 +168,12 @@ pub struct Reference {
     pub display: Option<String>,
 }
 
+impl Reference {
+    pub fn patient_id(&self) -> Option<&str> {
+        self.reference.as_deref()?.strip_prefix("Patient/")
+    }
+}
+
 /// Dosage instructions for a medication, including optional structured timing.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DosageInstruction {
@@ -213,4 +233,29 @@ pub struct Attachment {
     #[serde(rename = "contentType")]
     pub content_type: String,
     pub url: String,
+}
+
+pub fn parse_resource(line: &str) -> Result<FhirResource, serde_json::Error> {
+    let value: serde_json::Value = serde_json::from_str(line)?;
+    let resource_type = value["resource_type"]
+        .as_str()
+        .unwrap_or("unknown")
+        .to_lowercase();
+
+    let resource: FhirResource = match resource_type.as_str() {
+        "patient" => FhirResource::Patient(serde_json::from_value(value)?),
+        "condition" => FhirResource::Condition(serde_json::from_value(value)?),
+        "medicationrequest" => FhirResource::MedicationRequest(serde_json::from_value(value)?),
+        "observation" => FhirResource::Observation(serde_json::from_value(value)?),
+        "procedure" => FhirResource::Procedure(serde_json::from_value(value)?),
+        "binary" => FhirResource::Binary(serde_json::from_value(value)?),
+        "documentreference" => FhirResource::DocumentReference(serde_json::from_value(value)?),
+        "clinicalnote" => FhirResource::ClinicalNote(serde_json::from_value(value)?),
+        _ => FhirResource::Unknown {
+            resource_type: resource_type.to_string(),
+            id: value["id"].as_str().map(String::from),
+        }
+    };
+
+    Ok(resource)
 }
