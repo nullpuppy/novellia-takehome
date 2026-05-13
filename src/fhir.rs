@@ -6,6 +6,7 @@
 
 use serde::{Deserialize, Serialize};
 
+/// Enum to distinguish between FHIR Resources
 #[derive(Debug, Clone)]
 pub enum FhirResource {
     Patient(Patient),
@@ -19,6 +20,7 @@ pub enum FhirResource {
     Unknown { resource_type: String, id: Option<String>},
 }
 
+// --- FHIR resource models ---
 
 /// An individual receiving or registered for healthcare services.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -27,24 +29,30 @@ pub struct Patient {
     pub name: Vec<Name>,
     pub gender: String,
     /// YYYY-MM-DD
-    #[serde(rename = "birthDate")]
+    #[serde(alias = "birthDate")]
     pub birth_date: String,
     pub active: bool,
+}
+
+impl Patient {
+    pub fn display_name(&self) -> Option<String> {
+        self.name.first()?.display_name()
+    }
 }
 
 /// A clinical condition, problem, or diagnosis associated with a patient.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Condition {
     pub id: String,
-    #[serde(rename = "clinicalStatus")]
+    #[serde(alias = "clinicalStatus")]
     pub clinical_status: CodeableConcept,
-    #[serde(rename = "verificationStatus")]
+    #[serde(alias = "verificationStatus")]
     pub verification_status: CodeableConcept,
     pub code: Option<CodeableConcept>,
     pub subject: Reference,
-    #[serde(rename = "onsetDateTime")]
+    #[serde(alias = "onsetDateTime")]
     pub onset_date_time: Option<String>,
-    #[serde(rename = "abatementDateTime")]
+    #[serde(alias = "abatementDateTime")]
     pub abatement_date_time: Option<String>,
     pub recorder: Option<Reference>,
 }
@@ -55,13 +63,13 @@ pub struct MedicationRequest {
     pub id: String,
     pub status: String,
     pub intent: String,
-    #[serde(rename = "medicationCodeableConcept")]
+    #[serde(alias = "medicationCodeableConcept")]
     pub medication_codeable_concept: CodeableConcept,
     pub subject: Reference,
-    #[serde(rename = "authoredOn")]
+    #[serde(alias = "authoredOn")]
     pub authored_on: Option<String>,
     pub requester: Reference,
-    #[serde(rename = "dosageInstruction", default)]
+    #[serde(alias = "dosageInstruction", default)]
     pub dosage_instruction: Vec<DosageInstruction>,
 }
 
@@ -74,12 +82,12 @@ pub struct Observation {
     pub status: String,
     pub code: CodeableConcept,
     pub subject: Reference,
-    #[serde(rename = "effectiveDateTime")]
+    #[serde(alias = "effectiveDateTime")]
     pub effective_date_time: Option<String>,
     pub performer: Option<Vec<Reference>>,
-    #[serde(rename = "valueQuantity")]
+    #[serde(alias = "valueQuantity")]
     pub value_quantity: Option<Quantity>,
-    #[serde(rename = "valueString")]
+    #[serde(alias = "valueString")]
     pub value_string: Option<String>,
     /// Used for panel observations such as blood pressure (systolic + diastolic).
     pub component: Option<Vec<ObservationComponent>>,
@@ -92,7 +100,7 @@ pub struct Procedure {
     pub status: String,
     pub code: CodeableConcept,
     pub subject: Reference,
-    #[serde(rename = "performedDateTime")]
+    #[serde(alias = "performedDateTime")]
     pub performed_date_time: Option<String>,
     pub performer: Vec<ProcedurePerformer>,
 }
@@ -101,7 +109,7 @@ pub struct Procedure {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Binary {
     pub id: String,
-    #[serde(rename = "contentType")]
+    #[serde(alias = "contentType")]
     pub content_type: String,
     /// base64-encoded content
     pub data: String,
@@ -112,7 +120,7 @@ pub struct Binary {
 pub struct DocumentReference {
     pub id: String,
     pub status: String,
-    #[serde(rename = "type")]
+    #[serde(alias = "type")]
     pub ref_type: CodeableConcept,
     pub subject: Reference,
     pub date: String,
@@ -141,6 +149,13 @@ pub struct Name {
     pub family: String,
     #[serde(default)]
     pub given: Vec<String>,
+}
+
+impl Name {
+    pub fn display_name(&self) -> Option<String> {
+        let given = self.given.join(" ");
+        Some(format!("{} {}", given, self.family))
+    }
 }
 
 /// A concept that may be defined by one or more coded entries (FHIR CodeableConcept).
@@ -235,9 +250,10 @@ pub struct Attachment {
     pub url: String,
 }
 
+/// Parse FHIR resource from a raw, single-line JSON object string
 pub fn parse_resource(line: &str) -> Result<FhirResource, serde_json::Error> {
     let value: serde_json::Value = serde_json::from_str(line)?;
-    let resource_type = value["resource_type"]
+    let resource_type = value["resourceType"]
         .as_str()
         .unwrap_or("unknown")
         .to_lowercase();
@@ -255,6 +271,7 @@ pub fn parse_resource(line: &str) -> Result<FhirResource, serde_json::Error> {
             resource_type: resource_type.to_string(),
             id: value["id"].as_str().map(String::from),
         }
+
     };
 
     Ok(resource)

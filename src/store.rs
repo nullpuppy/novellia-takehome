@@ -105,4 +105,11 @@ impl Store {
         let patient_id = subject.patient_id()?.to_lowercase();
         self.patients.get_mut(&patient_id)
     }
+
+    // -- Public methods ---
+
+    pub fn get_patient(&self, id: &str) -> Option<&PatientRecord> {
+        let key = id.to_lowercase();
+        self.patients.get(&key)
+    }
 }
