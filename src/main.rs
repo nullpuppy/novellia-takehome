@@ -2,6 +2,7 @@ use axum::routing::get;
 use std::sync::Arc;
 use tower_http::trace::TraceLayer;
 use tracing::info;
+use handlers::patient;
 
 pub mod fhir;
 pub mod handlers;
@@ -22,37 +23,42 @@ async fn main() -> anyhow::Result<()> {
     let data_path = "docs/backend-takehome-fhir-resources.txt";
     let store = store::Store::load(data_path.into())?;
 
-    info!("Loaded {} patients", &store.patients.len());
+    info!(
+        "Loaded {} patients, {} data quality issues",
+        &store.patients.len(),
+        &store.quality_issues.len()
+    );
 
     let state = Arc::new(store);
 
     let app = axum::Router::new()
-        .route("/patients", get(handlers::list_patients))
-        .route("/patient/{id}", get(handlers::get_patient))
+        .route("/patients", get(patient::list_patients))
+        .route("/patients/{id}", get(patient::get_patient))
         .route(
-            "/patient/{id}/conditions",
-            get(handlers::get_patient_conditions),
+            "/patients/{id}/conditions",
+            get(patient::get_patient_conditions),
         )
         .route(
-            "/patient/{id}/medications",
-            get(handlers::get_patient_medications),
+            "/patients/{id}/medications",
+            get(patient::get_patient_medications),
         )
         .route(
-            "/patient/{id}/observations",
-            get(handlers::get_patient_observations),
+            "/patients/{id}/observations",
+            get(patient::get_patient_observations),
         )
         .route(
-            "/patient/{id}/procedures",
-            get(handlers::get_patient_procedures),
+            "/patients/{id}/procedures",
+            get(patient::get_patient_procedures),
         )
         .route(
-            "/patient/{id}/documents",
-            get(handlers::get_patient_documents),
+            "/patients/{id}/documents",
+            get(patient::get_patient_documents),
         )
         .route(
-            "/patient/{id}/timeline",
-            get(handlers::get_patient_timeline),
+            "/patients/{id}/timeline",
+            get(patient::get_patient_timeline),
         )
+        .route("/data-quality", get(handlers::get_data_quality))
         .layer(TraceLayer::new_for_http())
         .with_state(state);
 

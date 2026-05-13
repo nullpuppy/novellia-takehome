@@ -1,13 +1,10 @@
-use crate::{AppState, fhir};
+use axum::response::IntoResponse;
 use axum::Json;
 use axum::extract::{Path, State};
-use axum::http::StatusCode;
-use axum::response::IntoResponse;
-use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
 use serde::Serialize;
-
-// --- Response Types ---
+use base64::Engine;
+use crate::{fhir, handlers, AppState};
 
 #[derive(Serialize)]
 struct PatientSummary {
@@ -42,19 +39,6 @@ struct PatientTimeline {
     timeline: Vec<PatientTimelineEntry>,
 }
 
-// --- Error responses ---
-
-fn not_found(msg: &str) -> impl IntoResponse {
-    (
-        StatusCode::NOT_FOUND,
-        Json(serde_json::json!({
-            "error": msg,
-        })),
-    )
-}
-
-// --- Request Handlers ---
-
 /// /patients -- List all patients in a single response. No pagination.
 pub async fn list_patients(State(store): State<AppState>) -> impl IntoResponse {
     let mut summaries: Vec<PatientSummary> = store
@@ -84,7 +68,7 @@ pub async fn get_patient(
 ) -> impl IntoResponse {
     match store.get_patient(&id).and_then(|r| r.patient.as_ref()) {
         Some(r) => Json(serde_json::to_value(r).unwrap()).into_response(),
-        None => not_found(&format!("patient '{}' not found", id)).into_response(),
+        None => handlers::not_found(&format!("patient '{}' not found", id)).into_response(),
     }
 }
 
@@ -94,7 +78,7 @@ pub async fn get_patient_conditions(
 ) -> impl IntoResponse {
     match store.get_patient(&id) {
         Some(r) => Json(serde_json::to_value(&r.conditions).unwrap()).into_response(),
-        None => not_found(&format!("patient '{}' not found", id)).into_response(),
+        None => handlers::not_found(&format!("patient '{}' not found", id)).into_response(),
     }
 }
 
@@ -104,7 +88,7 @@ pub async fn get_patient_medications(
 ) -> impl IntoResponse {
     match store.get_patient(&id) {
         Some(r) => Json(serde_json::to_value(&r.medications).unwrap()).into_response(),
-        None => not_found(&format!("patient '{}' not found", id)).into_response(),
+        None => handlers::not_found(&format!("patient '{}' not found", id)).into_response(),
     }
 }
 
@@ -114,7 +98,7 @@ pub async fn get_patient_observations(
 ) -> impl IntoResponse {
     let record = match store.get_patient(&id) {
         Some(r) => r,
-        None => return not_found(&format!("patient '{}' not found", id)).into_response(),
+        None => return handlers::not_found(&format!("patient '{}' not found", id)).into_response(),
     };
 
     let mut observations: std::collections::HashMap<(String, String), &fhir::Observation> =
@@ -145,16 +129,17 @@ pub async fn get_patient_procedures(
 ) -> impl IntoResponse {
     match store.get_patient(&id) {
         Some(r) => Json(serde_json::to_value(&r.procedures).unwrap()).into_response(),
-        None => not_found(&format!("patient '{}' not found", id)).into_response(),
+        None => handlers::not_found(&format!("patient '{}' not found", id)).into_response(),
     }
 }
+
 pub async fn get_patient_documents(
     State(store): State<AppState>,
     Path(id): Path<String>,
 ) -> impl IntoResponse {
     let record = match store.get_patient(&id) {
         Some(r) => r,
-        None => return not_found(&format!("patient '{}' not found", id)).into_response(),
+        None => return handlers::not_found(&format!("patient '{}' not found", id)).into_response(),
     };
 
     let docs: Vec<ResolvedDocument> = record
@@ -199,7 +184,7 @@ pub async fn get_patient_timeline(
 ) -> impl IntoResponse {
     let record = match store.get_patient(&id) {
         Some(r) => r,
-        _ => return not_found(&format!("patient '{}' timeline not found", id)).into_response(),
+        _ => return handlers::not_found(&format!("patient '{}' timeline not found", id)).into_response(),
     };
 
     let patient_summary = match &record.patient {
