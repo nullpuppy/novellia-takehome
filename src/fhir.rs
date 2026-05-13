@@ -17,7 +17,10 @@ pub enum FhirResource {
     Binary(Binary),
     DocumentReference(DocumentReference),
     ClinicalNote(ClinicalNote),
-    Unknown { resource_type: String, id: Option<String>},
+    Unknown {
+        resource_type: String,
+        id: Option<String>,
+    },
 }
 
 // --- FHIR resource models ---
@@ -270,8 +273,7 @@ pub fn parse_resource(line: &str) -> Result<FhirResource, serde_json::Error> {
         _ => FhirResource::Unknown {
             resource_type: resource_type.to_string(),
             id: value["id"].as_str().map(String::from),
-        }
-
+        },
     };
 
     Ok(resource)

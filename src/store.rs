@@ -1,8 +1,11 @@
+use crate::fhir;
+use crate::fhir::{
+    Binary, ClinicalNote, Condition, DocumentReference, FhirResource, MedicationRequest,
+    Observation, Patient, Procedure,
+};
 use std::collections::HashMap;
 use std::fs;
 use tracing::error;
-use crate::fhir;
-use crate::fhir::{Condition, MedicationRequest, Observation, Patient, Binary, Procedure, DocumentReference, ClinicalNote, FhirResource};
 
 #[derive(Debug, Clone, Default)]
 pub struct PatientRecord {
@@ -30,7 +33,7 @@ impl Store {
         for (line_num, line) in content.lines().enumerate() {
             let line = line.trim();
             if line.is_empty() {
-                continue
+                continue;
             }
             match fhir::parse_resource(line) {
                 Ok(record) => resources.push(record),
@@ -45,7 +48,6 @@ impl Store {
         store.index(resources);
 
         Ok(store)
-
     }
 
     fn index(&mut self, resources: Vec<FhirResource>) {
