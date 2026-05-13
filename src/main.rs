@@ -1,5 +1,8 @@
 use axum::routing::get;
 use std::sync::Arc;
+use axum::ServiceExt;
+use tower::Layer;
+use tower_http::normalize_path::NormalizePathLayer;
 use tower_http::trace::TraceLayer;
 use tracing::info;
 use handlers::patient;
@@ -61,9 +64,10 @@ async fn main() -> anyhow::Result<()> {
         .route("/data-quality", get(handlers::get_data_quality))
         .layer(TraceLayer::new_for_http())
         .with_state(state);
+    let app = NormalizePathLayer::trim_trailing_slash().layer(app);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3100").await?;
-    axum::serve(listener, app).await?;
+    axum::serve(listener, ServiceExt::<axum::extract::Request>::into_make_service(app)).await?;
 
     Ok(())
 }
