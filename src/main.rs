@@ -1,15 +1,16 @@
-use axum::routing::get;
-use std::sync::Arc;
 use axum::ServiceExt;
+use axum::routing::get;
+use handlers::patient;
+use std::sync::Arc;
 use tower::Layer;
 use tower_http::normalize_path::NormalizePathLayer;
 use tower_http::trace::TraceLayer;
 use tracing::info;
-use handlers::patient;
 
 pub mod fhir;
 pub mod handlers;
 pub mod store;
+pub mod audit;
 
 pub type AppState = Arc<store::Store>;
 
@@ -67,7 +68,11 @@ async fn main() -> anyhow::Result<()> {
     let app = NormalizePathLayer::trim_trailing_slash().layer(app);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3100").await?;
-    axum::serve(listener, ServiceExt::<axum::extract::Request>::into_make_service(app)).await?;
+    axum::serve(
+        listener,
+        ServiceExt::<axum::extract::Request>::into_make_service(app),
+    )
+    .await?;
 
     Ok(())
 }

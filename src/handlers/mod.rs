@@ -1,10 +1,10 @@
 pub mod patient;
 
-use axum::response::IntoResponse;
-use axum::extract::State;
-use axum::Json;
-use axum::http::StatusCode;
 use crate::AppState;
+use axum::Json;
+use axum::extract::State;
+use axum::http::StatusCode;
+use axum::response::IntoResponse;
 
 // --- Error responses ---
 fn not_found(msg: &str) -> impl IntoResponse {

@@ -1,10 +1,10 @@
-use axum::response::IntoResponse;
+use crate::{AppState, fhir, handlers};
 use axum::Json;
 use axum::extract::{Path, State};
+use axum::response::IntoResponse;
+use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
 use serde::Serialize;
-use base64::Engine;
-use crate::{fhir, handlers, AppState};
 
 #[derive(Serialize)]
 struct PatientSummary {
@@ -184,7 +184,10 @@ pub async fn get_patient_timeline(
 ) -> impl IntoResponse {
     let record = match store.get_patient(&id) {
         Some(r) => r,
-        _ => return handlers::not_found(&format!("patient '{}' timeline not found", id)).into_response(),
+        _ => {
+            return handlers::not_found(&format!("patient '{}' timeline not found", id))
+                .into_response();
+        }
     };
 
     let patient_summary = match &record.patient {
