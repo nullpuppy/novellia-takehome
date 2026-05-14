@@ -1,9 +1,11 @@
-use crate::{AppState, fhir, handlers};
-use axum::Json;
+use crate::handlers::error::AppError;
+use crate::store::{normalize_id, typed_url};
+use crate::{fhir, AppState};
 use axum::extract::{Path, State};
 use axum::response::IntoResponse;
-use base64::Engine;
+use axum::Json;
 use base64::engine::general_purpose::STANDARD;
+use base64::Engine;
 use serde::Serialize;
 
 #[derive(Serialize)]
@@ -16,7 +18,7 @@ struct PatientSummary {
 }
 
 #[derive(Serialize)]
-struct ResolvedDocument {
+pub struct ResolvedDocument {
     id: String,
     status: String,
     date: String,
@@ -49,9 +51,17 @@ pub async fn list_patients(State(store): State<AppState>) -> impl IntoResponse {
             Some(PatientSummary {
                 id: p.id.clone(),
                 name: p.display_name(),
-                gender: None,
-                birth_date: None,
-                active: None,
+                gender: if p.gender.is_empty() {
+                    None
+                } else {
+                    Some(p.gender.clone())
+                },
+                birth_date: if p.birth_date.is_empty() {
+                    None
+                } else {
+                    Some(p.birth_date.clone())
+                },
+                active: Some(p.active),
             })
         })
         .collect();
@@ -60,48 +70,46 @@ pub async fn list_patients(State(store): State<AppState>) -> impl IntoResponse {
     Json(summaries)
 }
 
-/// /patient/{id} -- Get a specific, requested patient by the patient's id.
-/// returns 404 not found if patient isn't in our dataset
+/// /patients/{id} -- Get a specific, requested patient by the patient's id.
+/// returns 404 not found if the patient isn't in our dataset
 pub async fn get_patient(
     State(store): State<AppState>,
     Path(id): Path<String>,
-) -> impl IntoResponse {
-    match store.get_patient(&id).and_then(|r| r.patient.as_ref()) {
-        Some(r) => Json(serde_json::to_value(r).unwrap()).into_response(),
-        None => handlers::not_found(&format!("patient '{}' not found", id)).into_response(),
-    }
+) -> Result<Json<fhir::Patient>, AppError> {
+    Ok(Json(store.require_patient(&id)?.patient.clone().unwrap()))
 }
 
+/// /patients/{id}/conditions -- Get all conditions for a patient, most recent first
 pub async fn get_patient_conditions(
     State(store): State<AppState>,
     Path(id): Path<String>,
-) -> impl IntoResponse {
-    match store.get_patient(&id) {
-        Some(r) => Json(serde_json::to_value(&r.conditions).unwrap()).into_response(),
-        None => handlers::not_found(&format!("patient '{}' not found", id)).into_response(),
-    }
+) -> Result<Json<Vec<fhir::Condition>>, AppError> {
+    let mut conditions = store.require_patient(&id)?.conditions.clone();
+    conditions.sort_by(|a, b| b.onset_date_time.cmp(&a.onset_date_time));
+    Ok(Json(conditions))
 }
 
+/// /patients/{id}/medications -- Get all medications for a patient, most recent first
 pub async fn get_patient_medications(
     State(store): State<AppState>,
     Path(id): Path<String>,
-) -> impl IntoResponse {
-    match store.get_patient(&id) {
-        Some(r) => Json(serde_json::to_value(&r.medications).unwrap()).into_response(),
-        None => handlers::not_found(&format!("patient '{}' not found", id)).into_response(),
-    }
+) -> Result<Json<Vec<fhir::MedicationRequest>>, AppError> {
+    let mut medications = store.require_patient(&id)?.medications.clone();
+    medications.sort_by(|a, b| b.authored_on.cmp(&a.authored_on));
+    Ok(Json(medications))
 }
 
+/// /patients/{id}/ -- Get all observations for a patient, most recent first
 pub async fn get_patient_observations(
     State(store): State<AppState>,
     Path(id): Path<String>,
-) -> impl IntoResponse {
-    let record = match store.get_patient(&id) {
-        Some(r) => r,
-        None => return handlers::not_found(&format!("patient '{}' not found", id)).into_response(),
+) -> Result<Json<Vec<fhir::Observation>>, AppError> {
+    let record = match store.require_patient(&id) {
+        Ok(r) => r,
+        Err(err) => return Err(err),
     };
 
-    let mut observations: std::collections::HashMap<(String, String), &fhir::Observation> =
+    let mut observations: std::collections::HashMap<(String, String), fhir::Observation> =
         std::collections::HashMap::new();
 
     for obs in &record.observations {
@@ -112,37 +120,45 @@ pub async fn get_patient_observations(
             .and_then(|c| c.code.clone())
             .unwrap_or_default();
         let date_time_key = obs.effective_date_time.clone().unwrap_or_default();
-        let entry = observations.entry((code_key, date_time_key)).or_insert(obs);
+        let entry = observations
+            .entry((code_key, date_time_key))
+            .or_insert_with(|| obs.clone());
         if obs.status == "amended" {
-            *entry = obs;
+            *entry = obs.clone();
         }
     }
 
-    let mut result: Vec<&fhir::Observation> = observations.values().copied().collect();
-    result.sort_by_key(|o| o.effective_date_time.as_deref().unwrap_or(""));
-    Json(result).into_response()
+    let mut result: Vec<fhir::Observation> = observations.into_values().collect();
+    result.sort_by(|a, b| {
+        b.effective_date_time
+            .as_deref()
+            .unwrap_or_default()
+            .cmp(a.effective_date_time.as_deref().unwrap_or_default())
+    });
+    Ok(Json(result))
 }
 
+/// /patients/{id}/procedures -- Get all procedures for a patient, most recent first
 pub async fn get_patient_procedures(
     State(store): State<AppState>,
     Path(id): Path<String>,
-) -> impl IntoResponse {
-    match store.get_patient(&id) {
-        Some(r) => Json(serde_json::to_value(&r.procedures).unwrap()).into_response(),
-        None => handlers::not_found(&format!("patient '{}' not found", id)).into_response(),
-    }
+) -> Result<Json<Vec<fhir::Procedure>>, AppError> {
+    let mut procedures = store.require_patient(&id)?.procedures.clone();
+    procedures.sort_by(|a, b| b.performed_date_time.cmp(&a.performed_date_time));
+    Ok(Json(procedures))
 }
 
+/// /patients/{id}/documents -- Get all documents for a patient
 pub async fn get_patient_documents(
     State(store): State<AppState>,
     Path(id): Path<String>,
-) -> impl IntoResponse {
-    let record = match store.get_patient(&id) {
-        Some(r) => r,
-        None => return handlers::not_found(&format!("patient '{}' not found", id)).into_response(),
+) -> Result<Json<Vec<ResolvedDocument>>, AppError> {
+    let record = match store.require_patient(&id) {
+        Ok(r) => r,
+        Err(err) => return Err(err),
     };
 
-    let docs: Vec<ResolvedDocument> = record
+    let mut docs: Vec<ResolvedDocument> = record
         .documents
         .iter()
         .map(|d| {
@@ -151,8 +167,10 @@ pub async fn get_patient_documents(
             let content_type = attachment.map(|a| a.content_type.clone());
 
             let content = binary_url.as_deref().and_then(|url| {
-                let binary_id = url.strip_prefix("Binary/")?;
-                let binary = store.binaries.get(binary_id)?;
+                let normalized_id = typed_url("Binary", url)
+                    .map(normalize_id)
+                    .unwrap_or_default();
+                let binary = store.binaries.get(&normalized_id)?;
                 STANDARD
                     .decode(&binary.data)
                     .ok()
@@ -175,19 +193,20 @@ pub async fn get_patient_documents(
         })
         .collect();
 
-    Json(docs).into_response()
+    docs.sort_by(|a, b| b.date.cmp(&a.date));
+
+    Ok(Json(docs))
 }
 
+/// /patients/{id}/timeline -- Get all data related to a patient, sorted in descending
+/// chronological order.
 pub async fn get_patient_timeline(
     State(store): State<AppState>,
     Path(id): Path<String>,
 ) -> impl IntoResponse {
     let record = match store.get_patient(&id) {
         Some(r) => r,
-        _ => {
-            return handlers::not_found(&format!("patient '{}' timeline not found", id))
-                .into_response();
-        }
+        _ => return AppError::NotFound(format!("patient '{}' not found", id)).into_response(),
     };
 
     let patient_summary = match &record.patient {

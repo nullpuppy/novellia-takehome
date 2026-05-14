@@ -123,7 +123,7 @@ pub struct Binary {
 pub struct DocumentReference {
     pub id: String,
     pub status: String,
-    #[serde(alias = "type")]
+    #[serde(rename = "type")]
     pub ref_type: CodeableConcept,
     pub subject: Reference,
     pub date: String,
@@ -176,8 +176,17 @@ pub struct Reference {
 }
 
 impl Reference {
+    pub fn typed_id(&self, resource_type: &str) -> Option<&str> {
+        let (kind, id) = &self.reference.as_deref()?.split_once('/')?;
+        kind.eq_ignore_ascii_case(resource_type).then_some(id)
+    }
+
     pub fn patient_id(&self) -> Option<&str> {
-        self.reference.as_deref()?.strip_prefix("Patient/")
+        self.typed_id("Patient")
+    }
+
+    pub fn binary_id(&self) -> Option<&str> {
+        self.typed_id("Binary")
     }
 }
 
@@ -201,7 +210,7 @@ pub struct TimingRepeat {
     /// FHIR defines this as a decimal to support fractional periods (e.g. 1.5 days).
     pub period: f32,
     /// Unit code per UCUM: "s", "min", "h", "d", "wk", "mo", "a"
-    #[serde(rename = "periodUnit")]
+    #[serde(alias = "periodUnit")]
     pub period_unit: String,
 }
 
@@ -218,7 +227,7 @@ pub struct Quantity {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ObservationComponent {
     pub code: CodeableConcept,
-    #[serde(rename = "valueQuantity")]
+    #[serde(alias = "valueQuantity")]
     pub value_quantity: Quantity,
 }
 
@@ -237,7 +246,7 @@ pub struct DocumentContent {
 /// A file or document accessible via URL, referenced from a DocumentReference.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Attachment {
-    #[serde(rename = "contentType")]
+    #[serde(alias = "contentType")]
     pub content_type: String,
     pub url: String,
 }

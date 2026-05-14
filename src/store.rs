@@ -1,3 +1,4 @@
+use crate::handlers::error::AppError;
 use crate::{audit, fhir};
 use std::collections::HashMap;
 use std::fs;
@@ -50,6 +51,11 @@ impl Store {
         Ok(store)
     }
 
+    pub fn require_patient(&self, id: &str) -> Result<&PatientRecord, AppError> {
+        self.get_patient(id)
+            .ok_or_else(|| AppError::NotFound(format!("patient '{id}' not found")))
+    }
+
     fn index(&mut self, resources: Vec<fhir::FhirResource>) {
         for resource in &resources {
             if let fhir::FhirResource::Patient(p) = resource {
@@ -84,7 +90,7 @@ impl Store {
                     }
                 }
                 fhir::FhirResource::Binary(b) => {
-                    self.binaries.insert(b.id.clone(), b);
+                    self.binaries.insert(normalize_id(&b.id), b);
                 }
                 fhir::FhirResource::DocumentReference(d) => {
                     if let Some(record) = self.resolve_patient(&d.subject) {
@@ -104,14 +110,23 @@ impl Store {
     }
 
     fn resolve_patient(&mut self, subject: &fhir::Reference) -> Option<&mut PatientRecord> {
-        let patient_id = subject.patient_id()?.to_lowercase();
+        let patient_id = subject.patient_id().map(normalize_id)?;
         self.patients.get_mut(&patient_id)
     }
 
     // -- Public methods ---
 
     pub fn get_patient(&self, id: &str) -> Option<&PatientRecord> {
-        let key = id.to_lowercase();
+        let key = normalize_id(id);
         self.patients.get(&key)
     }
+}
+
+pub fn normalize_id(id: &str) -> String {
+    id.to_lowercase()
+}
+
+pub fn typed_url<'a>(resource_type: &str, url: &'a str) -> Option<&'a str> {
+    let (kind, raw_id) = &url.split_once('/')?;
+    kind.eq_ignore_ascii_case(resource_type).then_some(raw_id)
 }

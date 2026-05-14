@@ -7,10 +7,10 @@ use tower_http::normalize_path::NormalizePathLayer;
 use tower_http::trace::TraceLayer;
 use tracing::info;
 
+pub mod audit;
 pub mod fhir;
 pub mod handlers;
 pub mod store;
-pub mod audit;
 
 pub type AppState = Arc<store::Store>;
 

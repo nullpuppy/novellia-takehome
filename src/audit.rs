@@ -1,7 +1,7 @@
-use std::collections::{HashMap, HashSet};
-use serde::Serialize;
 use crate::fhir;
 use crate::fhir::{FhirResource, Reference};
+use serde::Serialize;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone, Serialize)]
 pub enum DataQualityIssue {
