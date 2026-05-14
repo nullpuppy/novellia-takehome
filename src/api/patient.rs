@@ -1,45 +1,14 @@
-use crate::handlers::error::AppError;
+pub mod models;
+
+use crate::api::error::AppError;
 use crate::store::{normalize_id, typed_url};
-use crate::{fhir, AppState};
+use crate::{AppState, fhir};
+use axum::Json;
 use axum::extract::{Path, State};
 use axum::response::IntoResponse;
-use axum::Json;
-use base64::engine::general_purpose::STANDARD;
 use base64::Engine;
-use serde::Serialize;
-
-#[derive(Serialize)]
-struct PatientSummary {
-    id: String,
-    name: Option<String>,
-    gender: Option<String>,
-    birth_date: Option<String>,
-    active: Option<bool>,
-}
-
-#[derive(Serialize)]
-pub struct ResolvedDocument {
-    id: String,
-    status: String,
-    date: String,
-    author: Vec<String>,
-    content_type: Option<String>,
-    content: Option<String>,
-    binary_url: Option<String>,
-}
-
-#[derive(Serialize)]
-struct PatientTimelineEntry {
-    date: Option<String>,
-    resource_type: &'static str,
-    resource: serde_json::Value,
-}
-
-#[derive(Serialize)]
-struct PatientTimeline {
-    patient: PatientSummary,
-    timeline: Vec<PatientTimelineEntry>,
-}
+use base64::engine::general_purpose::STANDARD;
+use models::{PatientSummary, PatientTimeline, PatientTimelineEntry, ResolvedDocument};
 
 /// /patients -- List all patients in a single response. No pagination.
 pub async fn list_patients(State(store): State<AppState>) -> impl IntoResponse {

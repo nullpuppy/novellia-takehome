@@ -1,15 +1,15 @@
+use api::patient;
 use axum::ServiceExt;
 use axum::routing::get;
-use handlers::patient;
 use std::sync::Arc;
 use tower::Layer;
 use tower_http::normalize_path::NormalizePathLayer;
 use tower_http::trace::TraceLayer;
 use tracing::info;
 
+pub mod api;
 pub mod audit;
 pub mod fhir;
-pub mod handlers;
 pub mod store;
 
 pub type AppState = Arc<store::Store>;
@@ -62,7 +62,7 @@ async fn main() -> anyhow::Result<()> {
             "/patients/{id}/timeline",
             get(patient::get_patient_timeline),
         )
-        .route("/data-quality", get(handlers::get_data_quality))
+        .route("/data-quality", get(api::get_data_quality))
         .layer(TraceLayer::new_for_http())
         .with_state(state);
     let app = NormalizePathLayer::trim_trailing_slash().layer(app);
