@@ -10,11 +10,15 @@ pub struct PatientRecord {
     pub conditions: Vec<fhir::Condition>,
     pub medications: Vec<fhir::MedicationRequest>,
     pub observations: Vec<fhir::Observation>,
+    pub normalized_observations: Vec<fhir::Observation>,
     pub procedures: Vec<fhir::Procedure>,
     pub documents: Vec<fhir::DocumentReference>,
     pub clinical_notes: Vec<fhir::ClinicalNote>,
 }
 
+/// In-memory data-store. Currently, the schema is storing data by patient id
+/// and the parsed fhir models. Every resource for a patient is stored alongside
+/// that patient. binaries are stored separately, patient agnostic.
 pub struct Store {
     // Keyed on id
     pub patients: HashMap<String, PatientRecord>,
@@ -25,7 +29,6 @@ pub struct Store {
 
 impl Store {
     /// Loads contents of the file at [path][`std::path::Path`] into an in-memory data store.
-    ///
     ///
     /// Returns
     /// [`anyhow::Result`]<[Store]>
@@ -125,6 +128,9 @@ impl Store {
                 }
             }
         }
+        self.patients.values_mut().for_each(|entry| {
+            entry.normalize_observations();
+        });
     }
 
     fn resolve_patient(&mut self, subject: &fhir::Reference) -> Option<&mut PatientRecord> {
@@ -138,6 +144,31 @@ impl Store {
     pub fn get_patient(&self, id: &str) -> Option<&PatientRecord> {
         let key = normalize_id(id);
         self.patients.get(&key)
+    }
+}
+
+impl PatientRecord {
+    fn normalize_observations(&mut self) {
+        let mut by_key: HashMap<(String, String), &fhir::Observation> = HashMap::new();
+        for obs in &self.observations {
+            let code = obs
+                .code
+                .coding
+                .first()
+                .and_then(|c| c.code.clone())
+                .unwrap_or_default();
+            let time = obs.effective_date_time.clone().unwrap_or_default();
+            by_key
+                .entry((code, time))
+                .and_modify(|existing| {
+                    if obs.status == "amended" {
+                        *existing = obs;
+                    }
+                })
+                .or_insert(obs);
+        }
+
+        self.normalized_observations = by_key.into_values().cloned().collect();
     }
 }
 

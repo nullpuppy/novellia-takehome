@@ -272,15 +272,15 @@ pub struct ClinicalNote {
 // === Other === //
 impl FhirResource {
     /// Parse FHIR resource from a raw JSON blob
-    /// 
+    ///
     /// Returns
     /// The specific [`FhirResource`] that this blob parses to, using the `resourceType` attribute.
-    /// 
-    /// For blobs that do not contain a `resource_type` or one not seen before, 
+    ///
+    /// For blobs that do not contain a `resource_type` or one not seen before,
     /// a [`FhirResource::Unknown`] is returned.
-    /// 
+    ///
     /// # Errors
-    /// [`serde_json::Error`] Parse error occurred while reading and converting json blob to a 
+    /// [`serde_json::Error`] Parse error occurred while reading and converting json blob to a
     /// [`serde_json::Value`]
     pub fn from_json(s: &str) -> Result<Self, serde_json::Error> {
         let value: serde_json::Value = serde_json::from_str(s)?;

@@ -141,7 +141,7 @@ pub(crate) fn audit_data_quality(resources: &Vec<fhir::FhirResource>) -> Vec<Dat
 /// # Returns
 /// A [`HashSet`] of all patient ids found in the array of resources that have been loaded.
 fn collect_patient_ids(resources: &[fhir::FhirResource]) -> HashSet<String> {
-     resources
+    resources
         .iter()
         .filter_map(|r| match &r {
             fhir::FhirResource::Patient(p) => Some(p.id.to_lowercase()),
@@ -151,7 +151,10 @@ fn collect_patient_ids(resources: &[fhir::FhirResource]) -> HashSet<String> {
 }
 
 /// Look for duplicate resources
-fn audit_observation_groups(observation_groups: HashMap<(String, String, String), Vec<&fhir::Observation>>, issues: &mut Vec<DataQualityIssue>) {
+fn audit_observation_groups(
+    observation_groups: HashMap<(String, String, String), Vec<&fhir::Observation>>,
+    issues: &mut Vec<DataQualityIssue>,
+) {
     for ((patient_id, code, effective_date_time), group) in observation_groups {
         if group.len() < 2 {
             continue;

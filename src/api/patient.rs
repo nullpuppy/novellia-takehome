@@ -1,18 +1,16 @@
 pub mod models;
 
+use crate::AppState;
 use crate::api::error::AppError;
-use crate::store::{normalize_id, typed_url};
-use crate::{AppState, fhir};
 use axum::Json;
 use axum::extract::{Path, State};
 use axum::response::IntoResponse;
-use base64::Engine;
-use base64::engine::general_purpose::STANDARD;
-use models::{PatientSummary, PatientTimeline, PatientTimelineEntry, ResolvedDocument};
+use models::{PatientSummary, PatientTimeline, ResolvedDocument, resolve_document};
 
 /// GET patients
 ///
-/// List all patients in a single response. No pagination, no specific order.
+/// List all patients in a single response. No pagination, and the
+/// most recent patient first.
 ///
 /// # Returns
 /// Vec<[`PatientSummary`]> serialized to json.
@@ -60,7 +58,7 @@ pub async fn get_patient(
 ///
 /// Get all conditions for a patient, most recent first
 ///
-/// # Return
+/// # Returns
 /// Vec<[`models::Condition`]> serialized to json.
 ///
 /// If nothing is found, an empty [Vec] serialized to json is returned.
@@ -101,7 +99,7 @@ pub async fn get_patient_medications(
 /// Get all observations for a patient, most recent first
 ///
 /// # Returns
-/// Vec<[`models::Condition`]> serialized to json.
+/// Vec<[`models::Observation`]> serialized to json.
 ///
 /// If nothing is found, an empty [Vec] serialized to json is returned.
 ///
@@ -111,38 +109,16 @@ pub async fn get_patient_observations(
     State(store): State<AppState>,
     Path(id): Path<String>,
 ) -> Result<Json<Vec<models::Observation>>, AppError> {
-    let record = match store.require_patient(&id) {
-        Ok(r) => r,
-        Err(err) => return Err(err),
-    };
+    let record = store.require_patient(&id)?;
 
-    let mut observations: std::collections::HashMap<(String, String), fhir::Observation> =
-        std::collections::HashMap::new();
-
-    for obs in &record.observations {
-        let code_key = obs
-            .code
-            .coding
-            .first()
-            .and_then(|c| c.code.clone())
-            .unwrap_or_default();
-        let date_time_key = obs.effective_date_time.clone().unwrap_or_default();
-        let entry = observations
-            .entry((code_key, date_time_key))
-            .or_insert_with(|| obs.clone());
-        if obs.status == "amended" {
-            *entry = obs.clone();
-        }
-    }
-
-    let mut result: Vec<fhir::Observation> = observations.into_values().collect();
-    result.sort_by(|a, b| {
+    let mut observations = record.normalized_observations.clone();
+    observations.sort_by(|a, b| {
         b.effective_date_time
             .as_deref()
             .unwrap_or_default()
             .cmp(a.effective_date_time.as_deref().unwrap_or_default())
     });
-    Ok(Json(result.iter().map(Into::into).collect()))
+    Ok(Json(observations.iter().map(Into::into).collect()))
 }
 
 /// GET patients/{id}/procedures
@@ -150,7 +126,7 @@ pub async fn get_patient_observations(
 /// Get all procedures for a patient, most recent first
 ///
 /// # Returns
-/// Vec of [`models::Medication`] serialized to JSON
+/// Vec of [`models::Procedure`] serialized to JSON
 ///
 /// If nothing is found, an empty [Vec] serialized to json is returned.
 ///
@@ -180,44 +156,12 @@ pub async fn get_patient_documents(
     State(store): State<AppState>,
     Path(id): Path<String>,
 ) -> Result<Json<Vec<ResolvedDocument>>, AppError> {
-    let record = match store.require_patient(&id) {
-        Ok(r) => r,
-        Err(err) => return Err(err),
-    };
+    let record = store.require_patient(&id)?;
 
     let mut docs: Vec<ResolvedDocument> = record
         .documents
         .iter()
-        .map(|d| {
-            let attachment = d.content.first().map(|c| &c.attachment);
-            let binary_url = attachment.map(|a| a.url.clone());
-            let content_type = attachment.map(|a| a.content_type.clone());
-
-            let content = binary_url.as_deref().and_then(|url| {
-                let normalized_id = typed_url("Binary", url)
-                    .map(normalize_id)
-                    .unwrap_or_default();
-                let binary = store.binaries.get(&normalized_id)?;
-                STANDARD
-                    .decode(&binary.data)
-                    .ok()
-                    .and_then(|bytes| String::from_utf8(bytes).ok())
-            });
-
-            ResolvedDocument {
-                id: d.id.clone(),
-                status: d.status.clone(),
-                date: d.date.clone(),
-                author: d
-                    .author
-                    .iter()
-                    .filter_map(|a| a.reference.clone())
-                    .collect(),
-                content_type,
-                content,
-                binary_url,
-            }
-        })
+        .map(|d| resolve_document(d, &store))
         .collect();
 
     docs.sort_by(|a, b| b.date.cmp(&a.date));
@@ -242,16 +186,11 @@ pub async fn get_patient_timeline(
 ) -> Result<Json<PatientTimeline>, AppError> {
     let record = store.require_patient(&id)?;
 
-    let patient_summary = match &record.patient {
-        Some(p) => p.into(),
-        None => PatientSummary {
-            id: "unknown".to_string(),
-            name: None,
-            gender: None,
-            birth_date: None,
-            active: None,
-        },
-    };
+    let patient_summary: PatientSummary = record
+        .patient
+        .as_ref()
+        .ok_or_else(|| AppError::NotFound(format!("patient '{id}' not found")))?
+        .into();
 
     let mut timeline: PatientTimeline = PatientTimeline {
         patient: patient_summary,
@@ -259,37 +198,18 @@ pub async fn get_patient_timeline(
     };
 
     // Get all chronological patient data
-    for c in &record.conditions {
-        timeline.timeline.push(PatientTimelineEntry {
-            date: c.onset_date_time.clone(),
-            resource_type: "Condition",
-            resource: serde_json::to_value(c).unwrap_or_default(),
-        });
-    }
-
-    for m in &record.medications {
-        timeline.timeline.push(PatientTimelineEntry {
-            date: m.authored_on.clone(),
-            resource_type: "MedicationRequest",
-            resource: serde_json::to_value(m).unwrap_or_default(),
-        });
-    }
-
-    for o in &record.observations {
-        timeline.timeline.push(PatientTimelineEntry {
-            date: o.effective_date_time.clone(),
-            resource_type: "Observation",
-            resource: serde_json::to_value(o).unwrap_or_default(),
-        });
-    }
-
-    for p in &record.procedures {
-        timeline.timeline.push(PatientTimelineEntry {
-            date: p.performed_date_time.clone(),
-            resource_type: "Procedure",
-            resource: serde_json::to_value(p).unwrap_or_default(),
-        });
-    }
+    timeline
+        .timeline
+        .extend(record.conditions.iter().map(Into::into));
+    timeline
+        .timeline
+        .extend(record.medications.iter().map(Into::into));
+    timeline
+        .timeline
+        .extend(record.normalized_observations.iter().map(Into::into));
+    timeline
+        .timeline
+        .extend(record.procedures.iter().map(Into::into));
 
     // sort timeline entries using date (ISO8601 / YYYYMMDD), newest first
     timeline
