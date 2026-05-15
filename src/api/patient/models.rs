@@ -12,6 +12,7 @@ pub struct Code {
     pub display: Option<String>,
 }
 
+#[derive(Debug, Serialize)]
 pub struct Patient {
     pub id: String,
     pub name: Option<String>,
@@ -75,6 +76,7 @@ pub struct Observation {
     pub value: Option<ObservationValue>,
 }
 
+#[derive(Debug, Serialize)]
 pub struct Procedure {
     pub id: String,
     pub status: String,
@@ -165,14 +167,14 @@ impl From<&fhir::Condition> for Condition {
         } else {
             value.clinical_status.text.clone()
         };
-        let verification_status = if let Some(coding) = value.clinical_status.coding.first() {
+        let verification_status = if let Some(coding) = value.verification_status.coding.first() {
             coding.code.clone()
         } else {
             value.verification_status.text.clone()
         };
         Condition {
             id: value.id.clone(),
-            code: value.code.as_ref().map(|fhir_code| fhir_code.into()),
+            code: value.code.as_ref().map(Into::into),
             clinical_status,
             verification_status,
             onset: value.onset_date_time.clone(),
@@ -211,7 +213,7 @@ impl From<&fhir::MedicationRequest> for Medication {
                 Some(r) => Some(r.clone()),
                 None => value.requester.reference.clone(),
             },
-            dosage: value.dosage_instruction.iter().map(|d| d.into()).collect(),
+            dosage: value.dosage_instruction.iter().map(Into::into).collect(),
         }
     }
 }
@@ -225,6 +227,7 @@ impl From<&fhir::ObservationComponent> for ObservationComponent {
         }
     }
 }
+
 impl From<&fhir::Observation> for Observation {
     fn from(value: &fhir::Observation) -> Self {
         Observation {
@@ -242,7 +245,23 @@ impl From<&fhir::Observation> for Observation {
                     None => r.reference.clone().unwrap_or_default(),
                 })
                 .collect(),
-            value: None,
+            value: if let Some(qual) = &value.value_quantity {
+                Some(ObservationValue::Quantity {
+                    value: qual.value.unwrap_or_default(),
+                    unit: qual.unit.clone(),
+                })
+            } else if let Some(text) = &value.value_string {
+                Some(ObservationValue::Text {
+                    value: text.clone(),
+                })
+            } else {
+                value
+                    .component
+                    .as_ref()
+                    .map(|comps| ObservationValue::Components {
+                        items: comps.iter().map(Into::into).collect(),
+                    })
+            },
         }
     }
 }
@@ -263,10 +282,29 @@ impl From<&fhir::Procedure> for Procedure {
                         .actor
                         .reference
                         .as_ref()
-                        .unwrap_or(&"".to_string())
-                        .to_string(),
+                        .unwrap_or(&String::new()).clone(),
                 })
                 .collect(),
+        }
+    }
+}
+
+impl From<&fhir::Patient> for PatientSummary {
+    fn from(value: &fhir::Patient) -> Self {
+        PatientSummary {
+            id: value.id.clone(),
+            name: value.display_name(),
+            gender: if value.gender.is_empty() {
+                None
+            } else {
+                Some(value.gender.clone())
+            },
+            birth_date: if value.birth_date.is_empty() {
+                None
+            } else {
+                Some(value.birth_date.clone())
+            },
+            active: Some(value.active),
         }
     }
 }

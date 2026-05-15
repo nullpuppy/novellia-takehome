@@ -24,6 +24,15 @@ pub struct Store {
 }
 
 impl Store {
+    /// Loads contents of the file at [path][`std::path::Path`] into an in-memory data store.
+    ///
+    ///
+    /// Returns
+    /// [`anyhow::Result`]<[Store]>
+    ///
+    /// # Errors
+    /// [`std::io::Error`] as an [`anyhow::Error`] if the file at the path cannot be opened or a problem
+    /// was encountered while reading the file
     pub fn load(path: std::path::PathBuf) -> anyhow::Result<Self> {
         let content = fs::read_to_string(path)?;
         let mut resources: Vec<fhir::FhirResource> = Vec::new();
@@ -35,6 +44,7 @@ impl Store {
             }
             match fhir::FhirResource::from_json(line) {
                 Ok(record) => resources.push(record),
+                // TODO also add this as a DataQualityIssue::ParseError to quality_issues
                 Err(err) => error!("line {}: parse error: {}", line_num, err),
             }
         }
@@ -51,6 +61,14 @@ impl Store {
         Ok(store)
     }
 
+    /// Retrieve a [`PatientRecord`] for the requested patient by their id.
+    ///
+    /// # Returns
+    /// [`Result`]<[&`PatientRecord`], [`AppError`]>
+    ///
+    /// # Errors
+    /// [`AppError::NotFound`] the requested patient could not be found in the data currently
+    /// loaded
     pub fn require_patient(&self, id: &str) -> Result<&PatientRecord, AppError> {
         self.get_patient(id)
             .ok_or_else(|| AppError::NotFound(format!("patient '{id}' not found")))
@@ -116,16 +134,19 @@ impl Store {
 
     // -- Public methods ---
 
+    #[must_use]
     pub fn get_patient(&self, id: &str) -> Option<&PatientRecord> {
         let key = normalize_id(id);
         self.patients.get(&key)
     }
 }
 
+#[must_use]
 pub fn normalize_id(id: &str) -> String {
     id.to_lowercase()
 }
 
+#[must_use]
 pub fn typed_url<'a>(resource_type: &str, url: &'a str) -> Option<&'a str> {
     let (kind, raw_id) = &url.split_once('/')?;
     kind.eq_ignore_ascii_case(resource_type).then_some(raw_id)

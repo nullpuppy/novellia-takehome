@@ -38,6 +38,7 @@ pub struct Patient {
 }
 
 impl Patient {
+    #[must_use]
     pub fn display_name(&self) -> Option<String> {
         self.name.first()?.display_name()
     }
@@ -144,13 +145,14 @@ pub struct Name {
 }
 
 impl Name {
+    #[must_use]
     pub fn display_name(&self) -> Option<String> {
         let given = self.given.join(" ");
         Some(format!("{} {}", given, self.family))
     }
 }
 
-/// A concept that may be defined by one or more coded entries (FHIR CodeableConcept).
+/// A concept that may be defined by one or more coded entries (FHIR [`CodeableConcept`]).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CodeableConcept {
     #[serde(default)]
@@ -158,7 +160,7 @@ pub struct CodeableConcept {
     pub text: Option<String>,
 }
 
-/// A single coded entry within a CodeableConcept, identified by system and code.
+/// A single coded entry within a [`CodeableConcept`], identified by system and code.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Coding {
     pub system: Option<String>,
@@ -176,15 +178,18 @@ pub struct Reference {
 }
 
 impl Reference {
+    #[must_use]
     pub fn typed_id(&self, resource_type: &str) -> Option<&str> {
         let (kind, id) = &self.reference.as_deref()?.split_once('/')?;
         kind.eq_ignore_ascii_case(resource_type).then_some(id)
     }
 
+    #[must_use]
     pub fn patient_id(&self) -> Option<&str> {
         self.typed_id("Patient")
     }
 
+    #[must_use]
     pub fn binary_id(&self) -> Option<&str> {
         self.typed_id("Binary")
     }
@@ -243,7 +248,7 @@ pub struct DocumentContent {
     pub attachment: Attachment,
 }
 
-/// A file or document accessible via URL, referenced from a DocumentReference.
+/// A file or document accessible via URL, referenced from a [`DocumentReference`]e.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Attachment {
     #[serde(alias = "contentType")]
@@ -267,6 +272,16 @@ pub struct ClinicalNote {
 // === Other === //
 impl FhirResource {
     /// Parse FHIR resource from a raw JSON blob
+    /// 
+    /// Returns
+    /// The specific [`FhirResource`] that this blob parses to, using the `resourceType` attribute.
+    /// 
+    /// For blobs that do not contain a `resource_type` or one not seen before, 
+    /// a [`FhirResource::Unknown`] is returned.
+    /// 
+    /// # Errors
+    /// [`serde_json::Error`] Parse error occurred while reading and converting json blob to a 
+    /// [`serde_json::Value`]
     pub fn from_json(s: &str) -> Result<Self, serde_json::Error> {
         let value: serde_json::Value = serde_json::from_str(s)?;
         let resource_type = value["resourceType"]
@@ -284,7 +299,7 @@ impl FhirResource {
             "documentreference" => FhirResource::DocumentReference(serde_json::from_value(value)?),
             "clinicalnote" => FhirResource::ClinicalNote(serde_json::from_value(value)?),
             _ => FhirResource::Unknown {
-                resource_type: resource_type.to_string(),
+                resource_type: resource_type.clone(),
                 id: value["id"].as_str().map(String::from),
             },
         };

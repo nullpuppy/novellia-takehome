@@ -1,3 +1,5 @@
+#![warn(clippy::pedantic)]
+
 use api::patient;
 use axum::ServiceExt;
 use axum::routing::get;
