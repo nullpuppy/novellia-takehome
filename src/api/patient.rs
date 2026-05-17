@@ -198,11 +198,8 @@ pub async fn get_patient_document(
         .documents
         .iter()
         .filter_map(|d| {
-            (d.id == doc_id && d.subject.patient_id() == Some(&id)).then_some(Into::<
-                ResolvedDocument,
-            >::into(
-                d
-            ))
+            (d.id == doc_id && d.subject.patient_id() == Some(&id))
+                .then_some(Into::<ResolvedDocument>::into(d))
         })
         .collect();
 

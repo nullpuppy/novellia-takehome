@@ -98,32 +98,8 @@ pub(crate) fn audit_data_quality(resources: &[fhir::FhirResource]) -> Vec<DataQu
             }
             fhir::FhirResource::Observation(o) => {
                 let resource_type = &ResourceType::Observation;
+                audit_observation(o, &mut obs_groups, &mut issues);
 
-                // Track observations found to detect duplicates
-                let patient_key = o
-                    .subject
-                    .patient_id()
-                    .map(str::to_lowercase)
-                    .unwrap_or_default();
-                let code_key = o
-                    .code
-                    .as_ref()
-                    .and_then(|cc| cc.coding.first())
-                    .and_then(|c| c.code.clone())
-                    .unwrap_or_default();
-                let dt_key = o.effective_date_time.clone().unwrap_or_default();
-                obs_groups
-                    .entry((patient_key, code_key, dt_key))
-                    .or_default()
-                    .push(o);
-
-                if o.status.as_deref() == Some("unknown") {
-                    issues.push(DataQualityIssue::IndeterminateStatus {
-                        resource_type: resource_type.into(),
-                        id: o.id.clone(),
-                        status: o.status.clone().unwrap_or_default(),
-                    });
-                }
                 check_patient_ref(
                     &o.subject,
                     resource_type.into(),
@@ -201,6 +177,38 @@ fn audit_patient(patient: &fhir::Patient, issues: &mut Vec<DataQualityIssue>) {
             id: patient.id.clone(),
             field: "birthDate".into(),
             reason: "expected 'YYYY-MM-DD'".into(),
+        });
+    }
+}
+
+fn audit_observation<'a>(
+    o: &'a fhir::Observation,
+    groups: &mut HashMap<(String, String, String), Vec<&'a fhir::Observation>>,
+    issues: &mut Vec<DataQualityIssue>,
+) {
+    // Track observations found to detect duplicates
+    let patient_key = o
+        .subject
+        .patient_id()
+        .map(str::to_lowercase)
+        .unwrap_or_default();
+    let code_key = o
+        .code
+        .as_ref()
+        .and_then(|cc| cc.coding.first())
+        .and_then(|c| c.code.clone())
+        .unwrap_or_default();
+    let dt_key = o.effective_date_time.clone().unwrap_or_default();
+    groups
+        .entry((patient_key, code_key, dt_key))
+        .or_default()
+        .push(o);
+
+    if o.status.as_deref() == Some("unknown") {
+        issues.push(DataQualityIssue::IndeterminateStatus {
+            resource_type: (&ResourceType::Observation).into(),
+            id: o.id.clone(),
+            status: o.status.clone().unwrap_or_default(),
         });
     }
 }
