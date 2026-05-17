@@ -4,8 +4,12 @@ use crate::AppState;
 use crate::api::error::AppError;
 use axum::Json;
 use axum::extract::{Path, State};
+use axum::http::{HeaderMap, StatusCode};
 use axum::response::IntoResponse;
+use base64::Engine;
+use base64::engine::general_purpose::STANDARD;
 use models::{PatientSummary, PatientTimeline, ResolvedDocument, resolve_document};
+use tracing::{error, warn};
 
 /// GET patients
 ///
@@ -155,7 +159,7 @@ pub async fn get_patient_procedures(
 pub async fn get_patient_documents(
     State(store): State<AppState>,
     Path(id): Path<String>,
-) -> Result<Json<Vec<ResolvedDocument>>, AppError> {
+) -> Result<impl IntoResponse, AppError> {
     let record = store.require_patient(&id)?;
 
     let mut docs: Vec<ResolvedDocument> = record
@@ -167,6 +171,84 @@ pub async fn get_patient_documents(
     docs.sort_by(|a, b| b.date.cmp(&a.date));
 
     Ok(Json(docs))
+}
+
+#[allow(clippy::doc_markdown)]
+/// GET patients/{id}/documents/{doc_id}
+///
+/// Get all documents for a patient without pagination and in no particular order.
+///
+/// # Returns
+/// Vec of [`ResolvedDocument`] serialized to JSON
+///
+/// If nothing is found, an empty [Vec] serialized to json is returned.
+///
+/// # Errors
+/// [`AppError::NotFound`] could not find a patient for the id requested
+///
+/// # Panics
+///
+pub async fn get_patient_document(
+    State(store): State<AppState>,
+    Path((id, doc_id)): Path<(String, String)>,
+) -> Result<(StatusCode, HeaderMap, String), AppError> {
+    let record = store.require_patient(&id)?;
+
+    let filtered_docs: Vec<ResolvedDocument> = record
+        .documents
+        .iter()
+        .filter_map(|d| {
+            (d.id == doc_id && d.subject.patient_id() == Some(&id)).then_some(Into::<
+                ResolvedDocument,
+            >::into(
+                d
+            ))
+        })
+        .collect();
+
+    if filtered_docs.is_empty() {
+        error!("document {}", doc_id);
+        return Err(AppError::NotFound(format!(
+            "document '{doc_id}' not found -- "
+        )));
+    } else if filtered_docs.len() > 1 {
+        // ?? what do?
+        warn!("multiple documents found for '{doc_id}'");
+        return Err(AppError::BadResource(format!(
+            "multiple documents found for '{doc_id}'"
+        )));
+    }
+
+    let doc = filtered_docs.first().ok_or(AppError::Internal(
+        AppError::BadResource(format!("document '{doc_id}' found, but could not load")).into(),
+    ))?;
+
+    let binary = doc
+        .binary_url
+        .clone()
+        .ok_or(AppError::BadResource(format!(
+            "invalid or missing binary on document '{doc_id}'"
+        )))?
+        .split_once('/')
+        .map(|(_, binary_id)| store.binaries.get(binary_id))
+        .and_then(|b| b)
+        .ok_or(AppError::BadResource(format!(
+            "missing binary '{:?}' for document '{doc_id}'",
+            doc.binary_url
+        )))?;
+
+    let content_type = binary.content_type.clone().unwrap_or_default();
+    let data = binary.data.as_deref().unwrap();
+    let content = STANDARD
+        .decode(data)
+        .ok()
+        .and_then(|bytes| String::from_utf8(bytes).ok())
+        .unwrap();
+
+    let mut headers = HeaderMap::new();
+    headers.append("content-type", content_type.parse().unwrap());
+
+    Ok((StatusCode::OK, headers, content))
 }
 
 /// GET patients/{id}/timeline
@@ -210,6 +292,9 @@ pub async fn get_patient_timeline(
     timeline
         .timeline
         .extend(record.procedures.iter().map(Into::into));
+    timeline
+        .timeline
+        .extend(record.documents.iter().map(Into::into));
 
     // sort timeline entries using date (ISO8601 / YYYYMMDD), newest first
     timeline

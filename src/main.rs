@@ -64,6 +64,10 @@ async fn main() -> anyhow::Result<()> {
             get(patient::get_patient_documents),
         )
         .route(
+            "/patients/{id}/documents/{doc_id}",
+            get(patient::get_patient_document),
+        )
+        .route(
             "/patients/{id}/timeline",
             get(patient::get_patient_timeline),
         )

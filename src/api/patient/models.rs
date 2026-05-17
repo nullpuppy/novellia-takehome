@@ -1,5 +1,4 @@
-use crate::fhir;
-use crate::fhir::ResourceType;
+use crate::fhir::{self, ResourceType};
 use crate::store;
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
@@ -104,6 +103,7 @@ pub struct ResolvedDocument {
     pub date: String,
     pub author: Vec<String>,
     pub content_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub content: Option<String>,
     pub binary_url: Option<String>,
 }
@@ -295,6 +295,33 @@ impl From<&fhir::Procedure> for Procedure {
     }
 }
 
+impl From<&fhir::DocumentReference> for ResolvedDocument {
+    fn from(value: &fhir::DocumentReference) -> Self {
+        let attachment = value.content.first().and_then(|c| c.attachment.as_ref());
+        let binary_url = attachment
+            .and_then(|a| a.url.clone())
+            .filter(|s| !s.is_empty());
+        let content_type = attachment
+            .and_then(|a| a.content_type.clone())
+            .filter(|s| !s.is_empty());
+
+        ResolvedDocument {
+            id: value.id.clone(),
+            status: value.status.clone().unwrap_or_default(),
+            date: value.date.clone().unwrap_or_default(),
+            author: value
+                .author
+                .iter()
+                .filter_map(|r| r.reference.clone())
+                .collect(),
+            content_type,
+            // Intentionally omitting so it doesn't show up in the timeline
+            content: None,
+            binary_url,
+        }
+    }
+}
+
 impl From<&fhir::Patient> for PatientSummary {
     fn from(value: &fhir::Patient) -> Self {
         PatientSummary {
@@ -380,6 +407,17 @@ impl From<&fhir::Procedure> for PatientTimelineEntry {
             date: value.performed_date_time.clone(),
             resource_type: (&ResourceType::Procedure).into(),
             resource: serde_json::to_value(Into::<Procedure>::into(value)).unwrap_or_default(),
+        }
+    }
+}
+
+impl From<&fhir::DocumentReference> for PatientTimelineEntry {
+    fn from(value: &fhir::DocumentReference) -> Self {
+        Self {
+            date: value.date.clone(),
+            resource_type: (&ResourceType::DocumentReference).into(),
+            resource: serde_json::to_value(Into::<ResolvedDocument>::into(value))
+                .unwrap_or_default(),
         }
     }
 }
