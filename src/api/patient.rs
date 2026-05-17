@@ -1,14 +1,14 @@
 pub mod models;
+pub mod document;
 
 use crate::AppState;
 use crate::api::error::AppError;
+use crate::store::normalize_id;
 use axum::Json;
 use axum::extract::{Path, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::response::IntoResponse;
-use base64::Engine;
-use base64::engine::general_purpose::STANDARD;
-use models::{PatientSummary, PatientTimeline, ResolvedDocument, resolve_document};
+use models::{Document, PatientSummary, PatientTimeline, document_with_content};
 use tracing::{error, warn};
 
 /// GET patients
@@ -150,7 +150,7 @@ pub async fn get_patient_procedures(
 /// Get all documents for a patient without pagination and in no particular order.
 ///
 /// # Returns
-/// Vec of [`ResolvedDocument`] serialized to JSON
+/// Vec of [`Document`] serialized to JSON
 ///
 /// If nothing is found, an empty [Vec] serialized to json is returned.
 ///
@@ -162,10 +162,10 @@ pub async fn get_patient_documents(
 ) -> Result<impl IntoResponse, AppError> {
     let record = store.require_patient(&id)?;
 
-    let mut docs: Vec<ResolvedDocument> = record
+    let mut docs: Vec<Document> = record
         .documents
         .iter()
-        .map(|d| resolve_document(d, &store))
+        .map(|d| document_with_content(d, &store))
         .collect();
 
     docs.sort_by(|a, b| b.date.cmp(&a.date));
@@ -179,7 +179,7 @@ pub async fn get_patient_documents(
 /// Get all documents for a patient without pagination and in no particular order.
 ///
 /// # Returns
-/// Vec of [`ResolvedDocument`] serialized to JSON
+/// Vec of [`Document`] serialized to JSON
 ///
 /// If nothing is found, an empty [Vec] serialized to json is returned.
 ///
@@ -191,15 +191,15 @@ pub async fn get_patient_documents(
 pub async fn get_patient_document(
     State(store): State<AppState>,
     Path((id, doc_id)): Path<(String, String)>,
-) -> Result<(StatusCode, HeaderMap, String), AppError> {
+) -> Result<(StatusCode, HeaderMap, Vec<u8>), AppError> {
     let record = store.require_patient(&id)?;
 
-    let filtered_docs: Vec<ResolvedDocument> = record
+    let filtered_docs: Vec<Document> = record
         .documents
         .iter()
         .filter_map(|d| {
-            (d.id == doc_id && d.subject.patient_id() == Some(&id))
-                .then_some(Into::<ResolvedDocument>::into(d))
+            (d.id == doc_id && d.subject.patient_id().map(normalize_id) == Some(normalize_id(&id)))
+                .then_some(Into::<Document>::into(d))
         })
         .collect();
 
@@ -227,23 +227,24 @@ pub async fn get_patient_document(
             "invalid or missing binary on document '{doc_id}'"
         )))?
         .split_once('/')
-        .map(|(_, binary_id)| store.binaries.get(binary_id))
+        .map(|(_, binary_id)| store.binaries.get(&normalize_id(binary_id)))
         .and_then(|b| b)
         .ok_or(AppError::BadResource(format!(
             "missing binary '{:?}' for document '{doc_id}'",
             doc.binary_url
         )))?;
 
-    let content_type = binary.content_type.clone().unwrap_or_default();
-    let data = binary.data.as_deref().unwrap();
-    let content = STANDARD
-        .decode(data)
-        .ok()
-        .and_then(|bytes| String::from_utf8(bytes).ok())
-        .unwrap();
+    let content_type = binary.content_type.clone().unwrap_or_default().parse();
+    let content =
+        models::decode_document_content(doc, &store).ok_or(AppError::BadResource(format!(
+            "missing binary '{:?}' for document '{doc_id}'",
+            doc.binary_url
+        )))?;
 
     let mut headers = HeaderMap::new();
-    headers.append("content-type", content_type.parse().unwrap());
+    if let Ok(content_type) = content_type {
+        headers.append("content-type", content_type);
+    }
 
     Ok((StatusCode::OK, headers, content))
 }

@@ -97,14 +97,14 @@ pub struct PatientSummary {
 }
 
 #[derive(Debug, Serialize)]
-pub struct ResolvedDocument {
+pub struct Document {
     pub id: String,
     pub status: String,
     pub date: String,
     pub author: Vec<String>,
     pub content_type: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub content: Option<String>,
+    pub content: Option<Vec<u8>>,
     pub binary_url: Option<String>,
 }
 
@@ -295,30 +295,9 @@ impl From<&fhir::Procedure> for Procedure {
     }
 }
 
-impl From<&fhir::DocumentReference> for ResolvedDocument {
+impl From<&fhir::DocumentReference> for Document {
     fn from(value: &fhir::DocumentReference) -> Self {
-        let attachment = value.content.first().and_then(|c| c.attachment.as_ref());
-        let binary_url = attachment
-            .and_then(|a| a.url.clone())
-            .filter(|s| !s.is_empty());
-        let content_type = attachment
-            .and_then(|a| a.content_type.clone())
-            .filter(|s| !s.is_empty());
-
-        ResolvedDocument {
-            id: value.id.clone(),
-            status: value.status.clone().unwrap_or_default(),
-            date: value.date.clone().unwrap_or_default(),
-            author: value
-                .author
-                .iter()
-                .filter_map(|r| r.reference.clone())
-                .collect(),
-            content_type,
-            // Intentionally omitting so it doesn't show up in the timeline
-            content: None,
-            binary_url,
-        }
+        document_without_content(value)
     }
 }
 
@@ -334,8 +313,7 @@ impl From<&fhir::Patient> for PatientSummary {
     }
 }
 
-#[must_use]
-pub fn resolve_document(doc: &fhir::DocumentReference, store: &store::Store) -> ResolvedDocument {
+fn document_without_content(doc: &fhir::DocumentReference) -> Document {
     let attachment = doc.content.first().and_then(|c| c.attachment.as_ref());
     let binary_url = attachment
         .and_then(|a| a.url.clone())
@@ -344,19 +322,7 @@ pub fn resolve_document(doc: &fhir::DocumentReference, store: &store::Store) -> 
         .and_then(|a| a.content_type.clone())
         .filter(|s| !s.is_empty());
 
-    let content = binary_url.as_ref().and_then(|url| {
-        let normalized_id = store::typed_url("Binary", url)
-            .map(store::normalize_id)
-            .unwrap_or_default();
-        let binary = store.binaries.get(&normalized_id)?;
-        let data = binary.data.as_deref()?;
-        STANDARD
-            .decode(data)
-            .ok()
-            .and_then(|bytes| String::from_utf8(bytes).ok())
-    });
-
-    ResolvedDocument {
+    Document {
         id: doc.id.clone(),
         status: doc.status.clone().unwrap_or_default(),
         date: doc.date.clone().unwrap_or_default(),
@@ -366,9 +332,29 @@ pub fn resolve_document(doc: &fhir::DocumentReference, store: &store::Store) -> 
             .filter_map(|r| r.reference.clone())
             .collect(),
         content_type,
-        content,
+        content: None,
         binary_url,
     }
+}
+
+#[must_use]
+pub fn decode_document_content(doc: &Document, store: &store::Store) -> Option<Vec<u8>> {
+    doc.binary_url.as_ref().and_then(|url| {
+        let normalized_id = store::typed_url("Binary", url)
+            .map(store::normalize_id)
+            .unwrap_or_default();
+        let binary = store.binaries.get(&normalized_id)?;
+        let data = binary.data.as_deref()?;
+        STANDARD.decode(data).ok()
+    })
+}
+
+#[must_use]
+pub fn document_with_content(doc: &fhir::DocumentReference, store: &store::Store) -> Document {
+    let mut resolved = document_without_content(doc);
+    resolved.content = decode_document_content(&resolved, store);
+
+    resolved
 }
 
 impl From<&fhir::Condition> for PatientTimelineEntry {
@@ -416,8 +402,7 @@ impl From<&fhir::DocumentReference> for PatientTimelineEntry {
         Self {
             date: value.date.clone(),
             resource_type: (&ResourceType::DocumentReference).into(),
-            resource: serde_json::to_value(Into::<ResolvedDocument>::into(value))
-                .unwrap_or_default(),
+            resource: serde_json::to_value(Into::<Document>::into(value)).unwrap_or_default(),
         }
     }
 }
