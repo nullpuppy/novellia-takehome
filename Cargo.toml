@@ -12,5 +12,5 @@ tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 tokio = { version = "1.52.3", features = ["rt-multi-thread"] }
 anyhow = "1.0.102"
 base64 = "0.22.1"
-tower-http = { version = "0.6.10", features = ["trace", "normalize-path"] }
+tower-http = { version = "0.6.10", features = ["trace", "normalize-path", "catch-panic"] }
 tower = "0.5.3"

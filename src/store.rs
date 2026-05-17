@@ -1,4 +1,5 @@
 use crate::api::error::AppError;
+use crate::audit::DataQualityIssue;
 use crate::{audit, fhir};
 use std::collections::HashMap;
 use std::fs;
@@ -24,7 +25,7 @@ pub struct Store {
     pub patients: HashMap<String, PatientRecord>,
     // Keyed on id
     pub binaries: HashMap<String, fhir::Binary>,
-    pub quality_issues: Vec<audit::DataQualityIssue>,
+    pub quality_issues: Vec<DataQualityIssue>,
 }
 
 impl Store {
@@ -36,9 +37,10 @@ impl Store {
     /// # Errors
     /// [`std::io::Error`] as an [`anyhow::Error`] if the file at the path cannot be opened or a problem
     /// was encountered while reading the file
-    pub fn load(path: std::path::PathBuf) -> anyhow::Result<Self> {
+    pub fn load(path: impl AsRef<std::path::Path>) -> anyhow::Result<Self> {
         let content = fs::read_to_string(path)?;
         let mut resources: Vec<fhir::FhirResource> = Vec::new();
+        let mut issues: Vec<DataQualityIssue> = Vec::new();
 
         for (line_num, line) in content.lines().enumerate() {
             let line = line.trim();
@@ -47,17 +49,23 @@ impl Store {
             }
             match fhir::FhirResource::from_json(line) {
                 Ok(record) => resources.push(record),
-                // TODO also add this as a DataQualityIssue::ParseError to quality_issues
-                Err(err) => error!("line {}: parse error: {}", line_num, err),
+                Err(err) => {
+                    issues.push(DataQualityIssue::ParseError {
+                        line_num,
+                        content: line.to_string(),
+                        message: err.to_string(),
+                    });
+                    error!("line {}: parse error: {}", line_num, err);
+                }
             }
         }
 
-        let quality_issues = audit::audit_data_quality(&resources);
+        issues.extend(audit::audit_data_quality(&resources));
 
         let mut store = Store {
             patients: HashMap::new(),
             binaries: HashMap::new(),
-            quality_issues,
+            quality_issues: issues,
         };
         store.index(resources);
 
@@ -124,7 +132,8 @@ impl Store {
                     }
                 }
                 fhir::FhirResource::Unknown { resource_type, id } => {
-                    error!("unknown resource type {} ({:?})", resource_type, id);
+                    let kind = resource_type.as_deref().unwrap_or("<missing>");
+                    error!("unknown resource type {kind} ({id:?})");
                 }
             }
         }
@@ -153,15 +162,15 @@ impl PatientRecord {
         for obs in &self.observations {
             let code = obs
                 .code
-                .coding
-                .first()
+                .as_ref()
+                .and_then(|cc| cc.coding.first())
                 .and_then(|c| c.code.clone())
                 .unwrap_or_default();
             let time = obs.effective_date_time.clone().unwrap_or_default();
             by_key
                 .entry((code, time))
                 .and_modify(|existing| {
-                    if obs.status == "amended" {
+                    if obs.status.as_deref() == Some("amended") {
                         *existing = obs;
                     }
                 })

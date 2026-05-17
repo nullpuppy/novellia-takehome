@@ -5,6 +5,9 @@ use tracing::error;
 
 pub enum AppError {
     NotFound(String),
+    /// Catch-all for unexpected errors. Logged at error level and returned to clients
+    /// as a generic 500 — used by `?` propagation of `anyhow::Error` and by the panic
+    /// recovery layer.
     Internal(anyhow::Error),
 }
 

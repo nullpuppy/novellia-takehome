@@ -1,4 +1,5 @@
 use crate::fhir;
+use crate::fhir::ResourceType;
 use crate::store;
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
@@ -45,8 +46,8 @@ pub struct Dosage {
 #[derive(Debug, Serialize)]
 pub struct Medication {
     pub id: String,
-    pub status: String,
-    pub intent: String,
+    pub status: Option<String>,
+    pub intent: Option<String>,
     pub medication: Option<Code>,
     pub prescribed_at: Option<String>,
     pub requester: Option<String>,
@@ -71,7 +72,7 @@ pub enum ObservationValue {
 #[derive(Debug, Serialize)]
 pub struct Observation {
     pub id: String,
-    pub status: String,
+    pub status: Option<String>,
     pub code: Option<Code>,
     pub recorded_at: Option<String>,
     pub performers: Vec<String>,
@@ -81,7 +82,7 @@ pub struct Observation {
 #[derive(Debug, Serialize)]
 pub struct Procedure {
     pub id: String,
-    pub status: String,
+    pub status: Option<String>,
     pub code: Option<Code>,
     pub performed_at: Option<String>,
     pub performers: Vec<String>,
@@ -147,38 +148,33 @@ impl From<&fhir::Patient> for Patient {
         Patient {
             id: value.id.clone(),
             name: value.display_name(),
-            gender: if value.gender.is_empty() {
-                None
-            } else {
-                Some(value.gender.clone())
-            },
-            birth_date: if value.birth_date.is_empty() {
-                None
-            } else {
-                Some(value.birth_date.clone())
-            },
-            active: value.active,
+            gender: value.gender.clone().filter(|s| !s.is_empty()),
+            birth_date: value.birth_date.clone().filter(|s| !s.is_empty()),
+            active: value.active.unwrap_or_default(),
         }
     }
 }
 
+fn codeable_concept_summary(cc: &fhir::CodeableConcept) -> Option<String> {
+    cc.coding
+        .first()
+        .and_then(|c| c.code.clone())
+        .or_else(|| cc.text.clone().filter(|t| !t.is_empty()))
+}
+
 impl From<&fhir::Condition> for Condition {
     fn from(value: &fhir::Condition) -> Self {
-        let clinical_status = if let Some(coding) = value.clinical_status.coding.first() {
-            coding.code.clone()
-        } else {
-            value.clinical_status.text.clone()
-        };
-        let verification_status = if let Some(coding) = value.verification_status.coding.first() {
-            coding.code.clone()
-        } else {
-            value.verification_status.text.clone()
-        };
         Condition {
             id: value.id.clone(),
             code: value.code.as_ref().map(Into::into),
-            clinical_status,
-            verification_status,
+            clinical_status: value
+                .clinical_status
+                .as_ref()
+                .and_then(codeable_concept_summary),
+            verification_status: value
+                .verification_status
+                .as_ref()
+                .and_then(codeable_concept_summary),
             onset: value.onset_date_time.clone(),
             abatement: value.abatement_date_time.clone(),
             recorder: match &value.recorder {
@@ -194,11 +190,19 @@ impl From<&fhir::Condition> for Condition {
 
 impl From<&fhir::DosageInstruction> for Dosage {
     fn from(value: &fhir::DosageInstruction) -> Self {
+        let (frequency, period, period_unit) = match &value.timing {
+            None => (None, None, None),
+            Some(dt) => match &dt.repeat {
+                None => (None, None, None),
+                Some(tr) => (tr.frequency, tr.period, tr.period_unit.clone()),
+            },
+        };
+
         Dosage {
             text: value.text.clone(),
-            frequency: value.timing.as_ref().map(|t| t.repeat.frequency),
-            period: value.timing.as_ref().map(|t| t.repeat.period),
-            period_unit: value.timing.as_ref().map(|t| t.repeat.period_unit.clone()),
+            frequency,
+            period,
+            period_unit,
         }
     }
 }
@@ -209,12 +213,12 @@ impl From<&fhir::MedicationRequest> for Medication {
             id: value.id.clone(),
             status: value.status.clone(),
             intent: value.intent.clone(),
-            medication: Some((&value.medication_codeable_concept).into()),
+            medication: value.medication_codeable_concept.as_ref().map(Into::into),
             prescribed_at: value.authored_on.clone(),
-            requester: match &value.requester.display {
-                Some(r) => Some(r.clone()),
-                None => value.requester.reference.clone(),
-            },
+            requester: value
+                .requester
+                .as_ref()
+                .and_then(|r| r.display.clone().or_else(|| r.reference.clone())),
             dosage: value.dosage_instruction.iter().map(Into::into).collect(),
         }
     }
@@ -223,9 +227,13 @@ impl From<&fhir::MedicationRequest> for Medication {
 impl From<&fhir::ObservationComponent> for ObservationComponent {
     fn from(value: &fhir::ObservationComponent) -> Self {
         ObservationComponent {
-            code: Some((&value.code).into()),
-            value: value.value_quantity.value.unwrap_or_default(),
-            unit: value.value_quantity.unit.clone(),
+            code: value.code.as_ref().map(Into::into),
+            value: value
+                .value_quantity
+                .as_ref()
+                .and_then(|q| q.value)
+                .unwrap_or_default(),
+            unit: value.value_quantity.as_ref().and_then(|u| u.unit.clone()),
         }
     }
 }
@@ -235,12 +243,10 @@ impl From<&fhir::Observation> for Observation {
         Observation {
             id: value.id.clone(),
             status: value.status.clone(),
-            code: Some((&value.code).into()),
+            code: value.code.as_ref().map(Into::into),
             recorded_at: value.effective_date_time.clone(),
             performers: value
                 .performer
-                .as_ref()
-                .unwrap_or(&Vec::new())
                 .iter()
                 .map(|r| match &r.display {
                     Some(d) => d.clone(),
@@ -248,22 +254,21 @@ impl From<&fhir::Observation> for Observation {
                 })
                 .collect(),
             // Intentional ordering by the best expected quality of data
-            value: if let Some(qual) = &value.value_quantity {
+            value: if let Some(quality) = &value.value_quantity {
                 Some(ObservationValue::Quantity {
-                    value: qual.value.unwrap_or_default(),
-                    unit: qual.unit.clone(),
+                    value: quality.value.unwrap_or_default(),
+                    unit: quality.unit.clone(),
                 })
             } else if let Some(text) = &value.value_string {
                 Some(ObservationValue::Text {
                     value: text.clone(),
                 })
+            } else if !value.component.is_empty() {
+                Some(ObservationValue::Components {
+                    items: value.component.iter().map(Into::into).collect(),
+                })
             } else {
-                value
-                    .component
-                    .as_ref()
-                    .map(|comps| ObservationValue::Components {
-                        items: comps.iter().map(Into::into).collect(),
-                    })
+                None
             },
         }
     }
@@ -274,14 +279,16 @@ impl From<&fhir::Procedure> for Procedure {
         Procedure {
             id: value.id.clone(),
             status: value.status.clone(),
-            code: Some((&value.code).into()),
+            code: value.code.as_ref().map(Into::into),
             performed_at: value.performed_date_time.clone(),
             performers: value
                 .performer
                 .iter()
-                .map(|p| match &p.actor.display {
-                    Some(d) => d.clone(),
-                    None => p.actor.reference.as_ref().unwrap_or(&String::new()).clone(),
+                .map(|p| {
+                    p.actor
+                        .as_ref()
+                        .and_then(|r| r.display.clone().or_else(|| r.reference.clone()))
+                        .unwrap_or_default()
                 })
                 .collect(),
         }
@@ -293,46 +300,43 @@ impl From<&fhir::Patient> for PatientSummary {
         PatientSummary {
             id: value.id.clone(),
             name: value.display_name(),
-            gender: if value.gender.is_empty() {
-                None
-            } else {
-                Some(value.gender.clone())
-            },
-            birth_date: if value.birth_date.is_empty() {
-                None
-            } else {
-                Some(value.birth_date.clone())
-            },
-            active: Some(value.active),
+            gender: value.gender.clone().filter(|s| !s.is_empty()),
+            birth_date: value.birth_date.clone().filter(|s| !s.is_empty()),
+            active: value.active,
         }
     }
 }
 
 #[must_use]
 pub fn resolve_document(doc: &fhir::DocumentReference, store: &store::Store) -> ResolvedDocument {
-    let attachment = doc.content.first().map(|c| &c.attachment);
-    let binary_url = attachment.and_then(|a| (!a.url.is_empty()).then(|| a.url.clone()));
-    let content_type = attachment.map(|a| a.content_type.clone());
+    let attachment = doc.content.first().and_then(|c| c.attachment.as_ref());
+    let binary_url = attachment
+        .and_then(|a| a.url.clone())
+        .filter(|s| !s.is_empty());
+    let content_type = attachment
+        .and_then(|a| a.content_type.clone())
+        .filter(|s| !s.is_empty());
 
-    let content = binary_url.as_deref().and_then(|url| {
+    let content = binary_url.as_ref().and_then(|url| {
         let normalized_id = store::typed_url("Binary", url)
             .map(store::normalize_id)
             .unwrap_or_default();
         let binary = store.binaries.get(&normalized_id)?;
+        let data = binary.data.as_deref()?;
         STANDARD
-            .decode(&binary.data)
+            .decode(data)
             .ok()
             .and_then(|bytes| String::from_utf8(bytes).ok())
     });
 
     ResolvedDocument {
         id: doc.id.clone(),
-        status: doc.status.clone(),
-        date: doc.date.clone(),
+        status: doc.status.clone().unwrap_or_default(),
+        date: doc.date.clone().unwrap_or_default(),
         author: doc
             .author
             .iter()
-            .filter_map(|a| a.reference.clone())
+            .filter_map(|r| r.reference.clone())
             .collect(),
         content_type,
         content,
@@ -344,8 +348,8 @@ impl From<&fhir::Condition> for PatientTimelineEntry {
     fn from(value: &fhir::Condition) -> Self {
         Self {
             date: value.onset_date_time.clone(),
-            resource_type: "Condition",
-            resource: serde_json::to_value(value).unwrap_or_default(),
+            resource_type: (&ResourceType::Condition).into(),
+            resource: serde_json::to_value(Into::<Condition>::into(value)).unwrap_or_default(),
         }
     }
 }
@@ -354,8 +358,8 @@ impl From<&fhir::MedicationRequest> for PatientTimelineEntry {
     fn from(value: &fhir::MedicationRequest) -> Self {
         Self {
             date: value.authored_on.clone(),
-            resource_type: "MedicationRequest",
-            resource: serde_json::to_value(value).unwrap_or_default(),
+            resource_type: (&ResourceType::MedicationRequest).into(),
+            resource: serde_json::to_value(Into::<Medication>::into(value)).unwrap_or_default(),
         }
     }
 }
@@ -364,8 +368,8 @@ impl From<&fhir::Observation> for PatientTimelineEntry {
     fn from(value: &fhir::Observation) -> Self {
         Self {
             date: value.effective_date_time.clone(),
-            resource_type: "Observation",
-            resource: serde_json::to_value(value).unwrap_or_default(),
+            resource_type: (&ResourceType::Observation).into(),
+            resource: serde_json::to_value(Into::<Observation>::into(value)).unwrap_or_default(),
         }
     }
 }
@@ -374,8 +378,8 @@ impl From<&fhir::Procedure> for PatientTimelineEntry {
     fn from(value: &fhir::Procedure) -> Self {
         Self {
             date: value.performed_date_time.clone(),
-            resource_type: "Procedure",
-            resource: serde_json::to_value(value).unwrap_or_default(),
+            resource_type: (&ResourceType::Procedure).into(),
+            resource: serde_json::to_value(Into::<Procedure>::into(value)).unwrap_or_default(),
         }
     }
 }

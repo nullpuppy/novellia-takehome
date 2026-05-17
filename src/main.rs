@@ -1,10 +1,13 @@
 #![warn(clippy::pedantic)]
 
+use crate::api::error::AppError;
 use api::patient;
 use axum::ServiceExt;
+use axum::response::IntoResponse;
 use axum::routing::get;
 use std::sync::Arc;
 use tower::Layer;
+use tower_http::catch_panic::CatchPanicLayer;
 use tower_http::normalize_path::NormalizePathLayer;
 use tower_http::trace::TraceLayer;
 use tracing::info;
@@ -27,7 +30,7 @@ async fn main() -> anyhow::Result<()> {
 
     // Load data set
     let data_path = "docs/backend-takehome-fhir-resources.txt";
-    let store = store::Store::load(data_path.into())?;
+    let store = store::Store::load(data_path)?;
 
     info!(
         "Loaded {} patients, {} data quality issues",
@@ -65,6 +68,9 @@ async fn main() -> anyhow::Result<()> {
             get(patient::get_patient_timeline),
         )
         .route("/data-quality", get(api::get_data_quality))
+        .layer(CatchPanicLayer::custom(|_| {
+            AppError::Internal(anyhow::anyhow!("panic in handler")).into_response()
+        }))
         .layer(TraceLayer::new_for_http())
         .with_state(state);
     let app = NormalizePathLayer::trim_trailing_slash().layer(app);
