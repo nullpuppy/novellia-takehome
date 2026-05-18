@@ -1,7 +1,4 @@
-use crate::fhir::{self, ResourceType};
-use crate::store;
-use base64::Engine;
-use base64::engine::general_purpose::STANDARD;
+use crate::fhir::{self};
 use serde::Serialize;
 //                      //
 // ======= DTOs ======= //
@@ -96,16 +93,14 @@ pub struct PatientSummary {
     pub active: Option<bool>,
 }
 
-#[derive(Debug, Serialize)]
-pub struct Document {
+#[derive(Debug, Default, Serialize)]
+pub struct DocumentSummary {
     pub id: String,
     pub status: String,
     pub date: String,
     pub author: Vec<String>,
     pub content_type: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub content: Option<Vec<u8>>,
-    pub binary_url: Option<String>,
+    pub binary_id: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -295,12 +290,6 @@ impl From<&fhir::Procedure> for Procedure {
     }
 }
 
-impl From<&fhir::DocumentReference> for Document {
-    fn from(value: &fhir::DocumentReference) -> Self {
-        document_without_content(value)
-    }
-}
-
 impl From<&fhir::Patient> for PatientSummary {
     fn from(value: &fhir::Patient) -> Self {
         PatientSummary {
@@ -309,100 +298,6 @@ impl From<&fhir::Patient> for PatientSummary {
             gender: value.gender.clone().filter(|s| !s.is_empty()),
             birth_date: value.birth_date.clone().filter(|s| !s.is_empty()),
             active: value.active,
-        }
-    }
-}
-
-fn document_without_content(doc: &fhir::DocumentReference) -> Document {
-    let attachment = doc.content.first().and_then(|c| c.attachment.as_ref());
-    let binary_url = attachment
-        .and_then(|a| a.url.clone())
-        .filter(|s| !s.is_empty());
-    let content_type = attachment
-        .and_then(|a| a.content_type.clone())
-        .filter(|s| !s.is_empty());
-
-    Document {
-        id: doc.id.clone(),
-        status: doc.status.clone().unwrap_or_default(),
-        date: doc.date.clone().unwrap_or_default(),
-        author: doc
-            .author
-            .iter()
-            .filter_map(|r| r.reference.clone())
-            .collect(),
-        content_type,
-        content: None,
-        binary_url,
-    }
-}
-
-#[must_use]
-pub fn decode_document_content(doc: &Document, store: &store::Store) -> Option<Vec<u8>> {
-    doc.binary_url.as_ref().and_then(|url| {
-        let normalized_id = store::typed_url("Binary", url)
-            .map(store::normalize_id)
-            .unwrap_or_default();
-        let binary = store.binaries.get(&normalized_id)?;
-        let data = binary.data.as_deref()?;
-        STANDARD.decode(data).ok()
-    })
-}
-
-#[must_use]
-pub fn document_with_content(doc: &fhir::DocumentReference, store: &store::Store) -> Document {
-    let mut resolved = document_without_content(doc);
-    resolved.content = decode_document_content(&resolved, store);
-
-    resolved
-}
-
-impl From<&fhir::Condition> for PatientTimelineEntry {
-    fn from(value: &fhir::Condition) -> Self {
-        Self {
-            date: value.onset_date_time.clone(),
-            resource_type: (&ResourceType::Condition).into(),
-            resource: serde_json::to_value(Into::<Condition>::into(value)).unwrap_or_default(),
-        }
-    }
-}
-
-impl From<&fhir::MedicationRequest> for PatientTimelineEntry {
-    fn from(value: &fhir::MedicationRequest) -> Self {
-        Self {
-            date: value.authored_on.clone(),
-            resource_type: (&ResourceType::MedicationRequest).into(),
-            resource: serde_json::to_value(Into::<Medication>::into(value)).unwrap_or_default(),
-        }
-    }
-}
-
-impl From<&fhir::Observation> for PatientTimelineEntry {
-    fn from(value: &fhir::Observation) -> Self {
-        Self {
-            date: value.effective_date_time.clone(),
-            resource_type: (&ResourceType::Observation).into(),
-            resource: serde_json::to_value(Into::<Observation>::into(value)).unwrap_or_default(),
-        }
-    }
-}
-
-impl From<&fhir::Procedure> for PatientTimelineEntry {
-    fn from(value: &fhir::Procedure) -> Self {
-        Self {
-            date: value.performed_date_time.clone(),
-            resource_type: (&ResourceType::Procedure).into(),
-            resource: serde_json::to_value(Into::<Procedure>::into(value)).unwrap_or_default(),
-        }
-    }
-}
-
-impl From<&fhir::DocumentReference> for PatientTimelineEntry {
-    fn from(value: &fhir::DocumentReference) -> Self {
-        Self {
-            date: value.date.clone(),
-            resource_type: (&ResourceType::DocumentReference).into(),
-            resource: serde_json::to_value(Into::<Document>::into(value)).unwrap_or_default(),
         }
     }
 }

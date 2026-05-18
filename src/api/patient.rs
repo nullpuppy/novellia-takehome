@@ -1,5 +1,6 @@
-pub mod models;
 pub mod document;
+pub mod models;
+pub mod timeline;
 
 use crate::AppState;
 use crate::api::error::AppError;
@@ -8,8 +9,8 @@ use axum::Json;
 use axum::extract::{Path, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::response::IntoResponse;
-use models::{Document, PatientSummary, PatientTimeline, document_with_content};
-use tracing::{error, warn};
+use models::{DocumentSummary, PatientSummary, PatientTimeline};
+use tracing::warn;
 
 /// GET patients
 ///
@@ -147,10 +148,11 @@ pub async fn get_patient_procedures(
 
 /// GET patients/{id}/documents
 ///
-/// Get all documents for a patient without pagination and in no particular order.
+/// Get all document summaries for a patient, newest first
 ///
 /// # Returns
-/// Vec of [`Document`] serialized to JSON
+/// Vec of [`DocumentSummary`] serialized to JSON. No document content is returned, for that
+/// use GET patients/{id}/documents/{docid}
 ///
 /// If nothing is found, an empty [Vec] serialized to json is returned.
 ///
@@ -162,10 +164,10 @@ pub async fn get_patient_documents(
 ) -> Result<impl IntoResponse, AppError> {
     let record = store.require_patient(&id)?;
 
-    let mut docs: Vec<Document> = record
+    let mut docs: Vec<DocumentSummary> = record
         .documents
         .iter()
-        .map(|d| document_with_content(d, &store))
+        .map(Into::<DocumentSummary>::into)
         .collect();
 
     docs.sort_by(|a, b| b.date.cmp(&a.date));
@@ -176,75 +178,49 @@ pub async fn get_patient_documents(
 #[allow(clippy::doc_markdown)]
 /// GET patients/{id}/documents/{doc_id}
 ///
-/// Get all documents for a patient without pagination and in no particular order.
+/// Get decoded binary content for a specific patient document
 ///
 /// # Returns
-/// Vec of [`Document`] serialized to JSON
-///
-/// If nothing is found, an empty [Vec] serialized to json is returned.
+/// The decoded document bytes with a 'content-type' when available
 ///
 /// # Errors
-/// [`AppError::NotFound`] could not find a patient for the id requested
-///
-/// # Panics
-///
+/// [`AppError::NotFound`] could not find a patient or document
+/// [`AppError::BadResource`] ambiguous document, or binary content could not be loaded
 pub async fn get_patient_document(
     State(store): State<AppState>,
     Path((id, doc_id)): Path<(String, String)>,
 ) -> Result<(StatusCode, HeaderMap, Vec<u8>), AppError> {
     let record = store.require_patient(&id)?;
 
-    let filtered_docs: Vec<Document> = record
-        .documents
-        .iter()
-        .filter_map(|d| {
-            (d.id == doc_id && d.subject.patient_id().map(normalize_id) == Some(normalize_id(&id)))
-                .then_some(Into::<Document>::into(d))
-        })
-        .collect();
+    let mut matching_docs = record.documents.iter().filter(|d| {
+        d.id == doc_id && d.subject.patient_id().map(normalize_id) == Some(normalize_id(&id))
+    });
 
-    if filtered_docs.is_empty() {
-        error!("document {}", doc_id);
-        return Err(AppError::NotFound(format!(
-            "document '{doc_id}' not found -- "
-        )));
-    } else if filtered_docs.len() > 1 {
-        // ?? what do?
-        warn!("multiple documents found for '{doc_id}'");
+    let Some(doc_ref) = matching_docs.next() else {
+        return Err(AppError::NotFound(format!("document '{doc_id}' not found")));
+    };
+
+    if matching_docs.next().is_some() {
         return Err(AppError::BadResource(format!(
             "multiple documents found for '{doc_id}'"
         )));
     }
 
-    let doc = filtered_docs.first().ok_or(AppError::Internal(
-        AppError::BadResource(format!("document '{doc_id}' found, but could not load")).into(),
-    ))?;
-
-    let binary = doc
-        .binary_url
-        .clone()
-        .ok_or(AppError::BadResource(format!(
-            "invalid or missing binary on document '{doc_id}'"
-        )))?
-        .split_once('/')
-        .map(|(_, binary_id)| store.binaries.get(&normalize_id(binary_id)))
-        .and_then(|b| b)
-        .ok_or(AppError::BadResource(format!(
-            "missing binary '{:?}' for document '{doc_id}'",
-            doc.binary_url
-        )))?;
-
-    let content_type = binary.content_type.clone().unwrap_or_default().parse();
-    let content =
-        models::decode_document_content(doc, &store).ok_or(AppError::BadResource(format!(
-            "missing binary '{:?}' for document '{doc_id}'",
-            doc.binary_url
-        )))?;
+    let doc = DocumentSummary::from(doc_ref);
+    let content_type = doc.content_type(&store).unwrap_or_default().parse();
 
     let mut headers = HeaderMap::new();
     if let Ok(content_type) = content_type {
         headers.append("content-type", content_type);
+    } else {
+        warn!("invalid or missing content-type for document '{doc_id}'");
     }
+
+    let content = doc.content(&store).map_err(|err| {
+        AppError::BadResource(format!(
+            "document '{doc_id}' content could not be loaded: {err}"
+        ))
+    })?;
 
     Ok((StatusCode::OK, headers, content))
 }

@@ -187,7 +187,7 @@ pub fn normalize_id(id: &str) -> String {
 }
 
 #[must_use]
-pub fn typed_url<'a>(resource_type: &str, url: &'a str) -> Option<&'a str> {
+pub fn resource_id_from_typed_uri<'a>(resource_type: &str, url: &'a str) -> Option<&'a str> {
     let (kind, raw_id) = &url.split_once('/')?;
     kind.eq_ignore_ascii_case(resource_type).then_some(raw_id)
 }
