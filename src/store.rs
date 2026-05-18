@@ -5,6 +5,10 @@ use std::collections::HashMap;
 use std::fs;
 use tracing::error;
 
+/// All resources associated with a single patient
+///
+/// all observations loaded at startup are in observations
+/// deduplicated records are referenced via `normalized_observations`
 #[derive(Debug, Clone, Default)]
 pub struct PatientRecord {
     pub patient: Option<fhir::Patient>,
@@ -17,9 +21,10 @@ pub struct PatientRecord {
     pub clinical_notes: Vec<fhir::ClinicalNote>,
 }
 
-/// In-memory data-store. Currently, the schema is storing data by patient id
-/// and the parsed fhir models. Every resource for a patient is stored alongside
-/// that patient. binaries are stored separately, patient agnostic.
+/// In-memory data-store that holds `raw` parsed FHIR
+///
+/// All binary data is found in binaries, all patient data is associated with the given
+/// patient in patients
 pub struct Store {
     // Keyed on id
     pub patients: HashMap<String, PatientRecord>,
@@ -29,14 +34,13 @@ pub struct Store {
 }
 
 impl Store {
-    /// Loads contents of the file at [path][`std::path::Path`] into an in-memory data store.
+    /// Loads resources from a JSONL file
     ///
-    /// Returns
-    /// [`anyhow::Result`]<[Store]>
+    /// loaded resources are audited for quality issues with [result][`audit::DataQualityIssue`]s saved in
+    /// `quality_issues` for future inspection via api call
     ///
     /// # Errors
-    /// [`std::io::Error`] as an [`anyhow::Error`] if the file at the path cannot be opened or a problem
-    /// was encountered while reading the file
+    /// [`std::io::Error`] file could not be openned or read
     pub fn load(path: impl AsRef<std::path::Path>) -> anyhow::Result<Self> {
         let content = fs::read_to_string(path)?;
         let mut resources: Vec<fhir::FhirResource> = Vec::new();
@@ -74,12 +78,8 @@ impl Store {
 
     /// Retrieve a [`PatientRecord`] for the requested patient by their id.
     ///
-    /// # Returns
-    /// [`Result`]<[&`PatientRecord`], [`AppError`]>
-    ///
     /// # Errors
-    /// [`AppError::NotFound`] the requested patient could not be found in the data currently
-    /// loaded
+    /// [`AppError::NotFound`] patient does not exist
     pub fn require_patient(&self, id: &str) -> Result<&PatientRecord, AppError> {
         self.get_patient(id)
             .ok_or_else(|| AppError::NotFound(format!("patient '{id}' not found")))
@@ -181,13 +181,16 @@ impl PatientRecord {
     }
 }
 
+/// normalizes id as lowercase. keys are inserted in sets/maps to allow normalized
+/// case-insensitive lookup
 #[must_use]
 pub fn normalize_id(id: &str) -> String {
     id.to_lowercase()
 }
 
+/// extracts id from FHIR references in the format of ResourceType/ResourceId
 #[must_use]
-pub fn resource_id_from_typed_uri<'a>(resource_type: &str, url: &'a str) -> Option<&'a str> {
+pub fn resource_id_from_typed_fhir_uri<'a>(resource_type: &str, url: &'a str) -> Option<&'a str> {
     let (kind, raw_id) = &url.split_once('/')?;
     kind.eq_ignore_ascii_case(resource_type).then_some(raw_id)
 }

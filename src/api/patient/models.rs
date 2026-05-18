@@ -4,6 +4,7 @@ use serde::Serialize;
 // ======= DTOs ======= //
 //                      //
 
+/// DTO for [`fhir::CodeableConcept`]
 #[derive(Debug, Default, Serialize)]
 pub struct Code {
     pub system: Option<String>,
@@ -11,6 +12,7 @@ pub struct Code {
     pub display: Option<String>,
 }
 
+/// DTO for [`fhir::Patient`]
 #[derive(Debug, Serialize)]
 pub struct Patient {
     pub id: String,
@@ -20,6 +22,7 @@ pub struct Patient {
     pub active: bool,
 }
 
+/// DTO for [`fhir::Condition`]
 #[derive(Debug, Serialize)]
 pub struct Condition {
     pub id: String,
@@ -31,6 +34,7 @@ pub struct Condition {
     pub recorder: Option<String>,
 }
 
+/// DTO for [`fhir::DosageTiming`]
 #[derive(Debug, Serialize)]
 pub struct Dosage {
     pub text: Option<String>,
@@ -39,6 +43,7 @@ pub struct Dosage {
     pub period_unit: Option<String>,
 }
 
+/// DTO for [`fhir::MedicationRequest`]
 #[derive(Debug, Serialize)]
 pub struct Medication {
     pub id: String,
@@ -50,6 +55,7 @@ pub struct Medication {
     pub dosage: Vec<Dosage>,
 }
 
+/// DTO for [`fhir::ObservationComponent`]
 #[derive(Debug, Serialize)]
 pub struct ObservationComponent {
     pub code: Option<Code>,
@@ -57,6 +63,7 @@ pub struct ObservationComponent {
     pub unit: Option<String>,
 }
 
+/// DTO for `valueQuantity`, and `valueString` fields on [`fhir::Observation`]
 #[derive(Debug, Serialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ObservationValue {
@@ -65,6 +72,7 @@ pub enum ObservationValue {
     Components { items: Vec<ObservationComponent> },
 }
 
+/// DTO for [`fhir::Observation`]
 #[derive(Debug, Serialize)]
 pub struct Observation {
     pub id: String,
@@ -75,6 +83,7 @@ pub struct Observation {
     pub value: Option<ObservationValue>,
 }
 
+/// DTO for [`fhir::Procedure`]
 #[derive(Debug, Serialize)]
 pub struct Procedure {
     pub id: String,
@@ -84,6 +93,7 @@ pub struct Procedure {
     pub performers: Vec<String>,
 }
 
+/// Basic patient info included in listings of patients
 #[derive(Debug, Serialize)]
 pub struct PatientSummary {
     pub id: String,
@@ -93,6 +103,9 @@ pub struct PatientSummary {
     pub active: Option<bool>,
 }
 
+/// Documentation metadata used for patient document listings, pulls data from
+/// [`fhir::DocumentReference`], [`fhir::Attachment`], [`fhir::Binary`] and
+/// other related resources.
 #[derive(Debug, Default, Serialize)]
 pub struct DocumentSummary {
     pub id: String,
@@ -103,6 +116,8 @@ pub struct DocumentSummary {
     pub binary_id: Option<String>,
 }
 
+/// Container for data included in a patient's history/timeline,
+/// date is the relevant resource date that can be used for sorting
 #[derive(Debug, Serialize)]
 pub struct PatientTimelineEntry {
     pub date: Option<String>,
@@ -110,6 +125,7 @@ pub struct PatientTimelineEntry {
     pub resource: serde_json::Value,
 }
 
+/// combined patient timeline
 #[derive(Debug, Serialize)]
 pub struct PatientTimeline {
     pub patient: PatientSummary,

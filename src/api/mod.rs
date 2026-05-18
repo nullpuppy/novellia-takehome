@@ -9,16 +9,10 @@ use axum::response::IntoResponse;
 
 /// GET data-quality
 ///
-/// During data import on service startup, a record of data quality issues is saved.
-/// This will return the detail of each problem encountered.
+/// Returns a list of quality issues found while parsing and validating importing
+/// datasets
 ///
-/// # Returns
-/// Vec of [`DataQualityIssue`] serialized to json
-///
-/// If no issues were found, an empty [Vec] serialized to json is returned.
-///
-/// # Errors
-/// [None]
+/// if no issues were found, returns an empty json array.
 pub async fn get_data_quality(State(store): State<AppState>) -> impl IntoResponse {
     Json(store.quality_issues.clone())
 }

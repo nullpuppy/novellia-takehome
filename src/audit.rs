@@ -4,7 +4,7 @@ use base64::Engine;
 use serde::Serialize;
 use std::collections::{HashMap, HashSet};
 
-/// Enum of possible parse and validation errors
+/// Parse and validation issues for auditing new resource loading
 #[derive(Debug, Clone, Serialize)]
 pub enum DataQualityIssue {
     /// Could not parse data for import
@@ -59,11 +59,10 @@ pub enum DataQualityIssue {
     },
 }
 
-/// Validates newly parsed resources to look for issues in the resources parsed
-/// and preserves the issue so it can be looked up at a later time.
+/// Audits parsed FHIR resources for quality issues in the data.
 ///
 /// # Returns
-/// Vec of [`DataQualityIssue`]
+/// [`DataQualityIssue`] All validation issues found during audit
 pub(crate) fn audit_data_quality(resources: &[fhir::FhirResource]) -> Vec<DataQualityIssue> {
     let mut issues = Vec::new();
     let mut obs_groups: HashMap<(String, String, String), Vec<&fhir::Observation>> = HashMap::new();

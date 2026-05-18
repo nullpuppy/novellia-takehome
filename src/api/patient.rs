@@ -12,18 +12,9 @@ use axum::response::IntoResponse;
 use models::{DocumentSummary, PatientSummary, PatientTimeline};
 use tracing::warn;
 
-/// GET patients
+/// GET /patients
 ///
-/// List all patients in a single response. No pagination, and the
-/// most recent patient first.
-///
-/// # Returns
-/// Vec<[`PatientSummary`]> serialized to json.
-///
-/// If nothing is found, an empty [Vec] serialized to json is returned.
-///
-/// # Errors
-/// None
+/// List all [`PatientSummary`]s, sorted by patient id
 pub async fn list_patients(State(store): State<AppState>) -> impl IntoResponse {
     let mut summaries: Vec<PatientSummary> = store
         .patients
@@ -38,12 +29,9 @@ pub async fn list_patients(State(store): State<AppState>) -> impl IntoResponse {
     Json(summaries)
 }
 
-/// GET patients/{id}
+/// GET /patients/{id}
 ///
-/// Get a specific patient by the patient's id.
-///
-/// # Returns
-/// [`models::Patient`] serialized to JSON
+/// Returns a single [`models::Patient`] by id
 ///
 /// # Errors
 /// [`AppError::NotFound`] Patient doesn't exist or could not be found
@@ -59,17 +47,12 @@ pub async fn get_patient(
     Ok(Json(patient.into()))
 }
 
-/// GET patients/{id}/conditions
+/// GET /patients/{id}/conditions
 ///
-/// Get all conditions for a patient, most recent first
-///
-/// # Returns
-/// Vec<[`models::Condition`]> serialized to json.
-///
-/// If nothing is found, an empty [Vec] serialized to json is returned.
+/// Returns patient [`models::Condition`]s, newest first
 ///
 /// # Errors
-/// [`AppError::NotFound`] could not find a patient for the id requested
+/// [`AppError::NotFound`] patient does not exist
 pub async fn get_patient_conditions(
     State(store): State<AppState>,
     Path(id): Path<String>,
@@ -81,15 +64,10 @@ pub async fn get_patient_conditions(
 
 /// GET patients/{id}/medications
 ///
-/// Get all medications for a patient, most recent first
-///
-/// # Returns
-/// Vec of [`models::Medication`] serialized to JSON
-///
-/// If nothing is found, an empty [Vec] serialized to json is returned.
+/// Returns patient [`models::Medication`]s, newest first
 ///
 /// # Errors
-/// [`AppError::NotFound`] could not find a patient for the id requested
+/// [`AppError::NotFound`] patient does not exist
 pub async fn get_patient_medications(
     State(store): State<AppState>,
     Path(id): Path<String>,
@@ -99,17 +77,12 @@ pub async fn get_patient_medications(
     Ok(Json(medications.iter().map(Into::into).collect()))
 }
 
-/// GET patients/{id}/observations
+/// GET /patients/{id}/observations
 ///
-/// Get all observations for a patient, most recent first
-///
-/// # Returns
-/// Vec<[`models::Observation`]> serialized to json.
-///
-/// If nothing is found, an empty [Vec] serialized to json is returned.
+/// Returns patient [`models::Observation`]s, newest first
 ///
 /// # Errors
-/// [`AppError::NotFound`] could not find a patient for the id requested
+/// [`AppError::NotFound`] patient does not exist
 pub async fn get_patient_observations(
     State(store): State<AppState>,
     Path(id): Path<String>,
@@ -128,15 +101,10 @@ pub async fn get_patient_observations(
 
 /// GET patients/{id}/procedures
 ///
-/// Get all procedures for a patient, most recent first
-///
-/// # Returns
-/// Vec of [`models::Procedure`] serialized to JSON
-///
-/// If nothing is found, an empty [Vec] serialized to json is returned.
+/// Returns patient [`models::Procedure`]s, newest first
 ///
 /// # Errors
-/// [`AppError::NotFound`] could not find a patient for the id requested
+/// [`AppError::NotFound`] patient does not exist
 pub async fn get_patient_procedures(
     State(store): State<AppState>,
     Path(id): Path<String>,
@@ -146,18 +114,13 @@ pub async fn get_patient_procedures(
     Ok(Json(procedures.iter().map(Into::into).collect()))
 }
 
-/// GET patients/{id}/documents
+/// GET /patients/{id}/documents
 ///
-/// Get all document summaries for a patient, newest first
-///
-/// # Returns
-/// Vec of [`DocumentSummary`] serialized to JSON. No document content is returned, for that
-/// use GET patients/{id}/documents/{docid}
-///
-/// If nothing is found, an empty [Vec] serialized to json is returned.
+/// Returns [`DocumentSummary`]s for a patient, newest first.
+/// use GET /patients/{id}/documents/id to get the actual contents
 ///
 /// # Errors
-/// [`AppError::NotFound`] could not find a patient for the id requested
+/// [`AppError::NotFound`] patient does not exist
 pub async fn get_patient_documents(
     State(store): State<AppState>,
     Path(id): Path<String>,
@@ -176,16 +139,13 @@ pub async fn get_patient_documents(
 }
 
 #[allow(clippy::doc_markdown)]
-/// GET patients/{id}/documents/{doc_id}
+/// GET /patients/{id}/documents/{doc_id}
 ///
-/// Get decoded binary content for a specific patient document
-///
-/// # Returns
-/// The decoded document bytes with a 'content-type' when available
+/// Returns decoded binary content for a specific patient document
 ///
 /// # Errors
-/// [`AppError::NotFound`] could not find a patient or document
-/// [`AppError::BadResource`] ambiguous document, or binary content could not be loaded
+/// [`AppError::NotFound`] patient and/or document does not exist
+/// [`AppError::BadResource`] invalid required data in document or binary
 pub async fn get_patient_document(
     State(store): State<AppState>,
     Path((id, doc_id)): Path<(String, String)>,
@@ -225,17 +185,12 @@ pub async fn get_patient_document(
     Ok((StatusCode::OK, headers, content))
 }
 
-/// GET patients/{id}/timeline
+/// GET /patients/{id}/timeline
 ///
-/// Get all data related to a patient, sorted in descending chronological order.
-///
-/// # Returns
-/// Vec of [`PatientTimeline`] serialized to json
-///
-/// If nothing is found, an empty [Vec] serialized to json is returned.
+/// Returns a combined [`PatientTimeline`], newest resource first.
 ///
 /// # Errors
-/// [`AppError::NotFound`] could not find a patient for the id requested
+/// [`AppError::NotFound`] patient does not exist
 pub async fn get_patient_timeline(
     State(store): State<AppState>,
     Path(id): Path<String>,

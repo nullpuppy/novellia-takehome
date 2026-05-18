@@ -4,13 +4,16 @@ use axum::response::{IntoResponse, Response};
 use std::fmt::Formatter;
 use tracing::error;
 
+/// Errors returned by API handlers
 #[derive(Debug)]
 pub enum AppError {
+    /// Requested resource(s) not found
     NotFound(String),
+    /// Requested resource(s) exist, but data is invalid and cannot be returned
     BadResource(String),
-    /// Catch-all for unexpected errors. Logged at error level and returned to clients
-    /// as a generic 500 — used by `?` propagation of `anyhow::Error` and by the panic
-    /// recovery layer.
+    /// Internal Service Error
+    ///
+    /// Error(s)/Messages are logged server side, returned status code should be 500
     Internal(anyhow::Error),
 }
 

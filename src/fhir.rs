@@ -25,6 +25,8 @@ pub enum FhirResource {
     },
 }
 
+/// All resource type names, allows conversion from and to strings
+/// so we don't have error-prone strings all over the place
 #[derive(Debug, Clone, Deserialize)]
 pub enum ResourceType {
     // FHIR Standard Resource types
@@ -39,7 +41,7 @@ pub enum ResourceType {
     // Non-standard/extensions
     ClinicalNote,
 
-    // Other, mainly intended for catching new types not yet handled
+    /// invalid, new, or otherwise unseen/handled resource
     Unknown(String),
 }
 
@@ -273,7 +275,7 @@ pub struct Reference {
 
 impl Reference {
     #[must_use]
-    pub fn typed_id(&self, resource_type: &str) -> Option<&str> {
+    fn typed_id(&self, resource_type: &str) -> Option<&str> {
         let (kind, id) = &self.reference.as_deref()?.split_once('/')?;
         kind.eq_ignore_ascii_case(resource_type).then_some(id)
     }

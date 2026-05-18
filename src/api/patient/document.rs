@@ -6,14 +6,10 @@ use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
 
 impl DocumentSummary {
-
-    /// Gets the best possible content type for the binary referenced
-    /// by this instance
+    /// Returns the best available content type for this [`models::DocumentSummary`]
     ///
-    /// # Returns
-    /// an option that will contain either the content type from the
-    /// binary, if we could get it, and it's not empty, the content type
-    /// from the attachment, or None if no content type could be found
+    /// Prefers the content type on the referenced [`fhir::Binary`] falling back
+    /// to the [`fhir::DocumentReference`] attachment content type
     #[must_use]
     pub fn content_type(&self, store: &store::Store) -> Option<String> {
         let content_type = self
@@ -32,32 +28,17 @@ impl DocumentSummary {
 
     /// Decodes this document's referenced binary content.
     ///
-    /// # Results
-    /// Decoded vector of bytes
-    ///
     /// # Errors
-    /// document does not reference a binary,
-    /// binary that document references is missing,
-    /// binary that document references is missing data,
-    /// binary that document references has invalid baso64 contents
-    /// [`AppError::BadResource`]
+    /// [`AppError::BadResource`] document reference does not reference a binary,
+    /// the attached binary is missing, or has bad data
     pub fn content(&self, store: &store::Store) -> anyhow::Result<Vec<u8>> {
         self.decode_b64_attachment_content(store)
     }
 
-
-    /// Decodes base64 content for the binary_id present on the
-    /// document
-    ///
-    /// # Results
-    /// Decoded vector of bytes
+    /// Decodes base64 content for this document's referenced binary
     ///
     /// # Errors
-    /// document does not reference a binary,
-    /// binary that document references is missing,
-    /// binary that document references is missing data,
-    /// binary that document references has invalid baso64 contents
-    /// [`AppError::BadResource`]
+    /// [`AppError::BadResource`] binary reference cannot be resolved or decoded
     fn decode_b64_attachment_content(&self, store: &store::Store) -> anyhow::Result<Vec<u8>> {
         let binary_id = self
             .binary_id
@@ -89,9 +70,9 @@ impl From<&fhir::DocumentReference> for DocumentSummary {
         let binary_url = attachment
             .and_then(|a| a.url.clone())
             .filter(|s| !s.is_empty());
-        let binary_id = binary_url
-            .as_ref()
-            .and_then(|uri| store::resource_id_from_typed_uri("Binary", uri).map(String::from));
+        let binary_id = binary_url.as_ref().and_then(|uri| {
+            store::resource_id_from_typed_fhir_uri("Binary", uri).map(String::from)
+        });
 
         let content_type = attachment
             .and_then(|a| a.content_type.clone())
