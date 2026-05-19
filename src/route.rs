@@ -15,16 +15,32 @@ pub fn build_router(state: AppState) -> axum::Router {
             get(patient::get_patient_conditions),
         )
         .route(
+            "/patients/{id}/conditions/{condition_id}",
+            get(patient::get_patient_condition),
+        )
+        .route(
             "/patients/{id}/medications",
             get(patient::get_patient_medications),
+        )
+        .route(
+            "/patients/{id}/medications/{medication_id}",
+            get(patient::get_patient_medication),
         )
         .route(
             "/patients/{id}/observations",
             get(patient::get_patient_observations),
         )
         .route(
+            "/patients/{id}/observations/{observation_id}",
+            get(patient::get_patient_observation),
+        )
+        .route(
             "/patients/{id}/procedures",
             get(patient::get_patient_procedures),
+        )
+        .route(
+            "/patients/{id}/procedures/{procedure_id}",
+            get(patient::get_patient_procedure),
         )
         .route(
             "/patients/{id}/documents",
@@ -38,6 +54,18 @@ pub fn build_router(state: AppState) -> axum::Router {
             "/patients/{id}/timeline",
             get(patient::get_patient_timeline),
         )
+        // .route(
+        //     "/binary",
+        //     get(api::get_binaries),
+        // )
+        // .route(
+        //     "/binary/{id}",
+        //     get(api::get_binary)
+        // )
+        // .route(
+        //     "/resources/orphaned",
+        //     resources::get_resources
+        // )
         .route("/data-quality", get(api::get_data_quality))
         .layer(CatchPanicLayer::custom(|_| {
             AppError::Internal(anyhow::anyhow!("panic in handler")).into_response()
