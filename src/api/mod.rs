@@ -9,8 +9,7 @@ use axum::response::IntoResponse;
 
 /// GET data-quality
 ///
-/// Returns a list of quality issues found while parsing and validating importing
-/// datasets
+/// Returns parse and validation issues found while loading the dataset.
 ///
 /// if no issues were found, returns an empty json array.
 pub async fn get_data_quality(State(store): State<AppState>) -> impl IntoResponse {

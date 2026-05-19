@@ -96,7 +96,7 @@ impl core::fmt::Display for ResourceType {
 // --- FHIR resource models ---
 
 /// An individual receiving or registered for healthcare services.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Default)]
 pub struct Patient {
     pub id: String,
     pub name: Vec<Name>,
@@ -115,7 +115,7 @@ impl Patient {
 }
 
 /// A clinical condition, problem, or diagnosis associated with a patient.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Default)]
 pub struct Condition {
     pub id: String,
     #[serde(alias = "clinicalStatus")]
@@ -132,7 +132,7 @@ pub struct Condition {
 }
 
 /// An order or request for a medication to be dispensed or administered to a patient.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Default)]
 pub struct MedicationRequest {
     pub id: String,
     pub status: Option<String>,
@@ -150,7 +150,7 @@ pub struct MedicationRequest {
 /// A measurement, assessment, or simple assertion made about a patient (e.g., vitals, labs).
 ///
 /// The value is represented by exactly one of `value_quantity`, `value_string`, or `component`.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Default)]
 pub struct Observation {
     pub id: String,
     pub status: Option<String>,
@@ -170,7 +170,7 @@ pub struct Observation {
 }
 
 /// An action that was performed on or for a patient (e.g. surgery, vaccination, exam).
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Default)]
 pub struct Procedure {
     pub id: String,
     pub status: Option<String>,
@@ -182,7 +182,7 @@ pub struct Procedure {
 }
 
 /// Raw binary content attached to a patient record, stored as base64.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Default)]
 pub struct Binary {
     pub id: String,
     #[serde(alias = "contentType")]
@@ -192,7 +192,7 @@ pub struct Binary {
 }
 
 /// A pointer to a clinical document (e.g. a consult note) with attachment metadata.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Default)]
 pub struct DocumentReference {
     pub id: String,
     pub status: Option<String>,
@@ -207,7 +207,7 @@ pub struct DocumentReference {
 }
 
 /// A human name with a usage classification (e.g. "official", "nickname").
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Default)]
 pub struct Name {
     #[serde(rename = "use")]
     pub name_use: Option<String>,
@@ -239,7 +239,7 @@ impl Name {
 }
 
 /// A concept that may be defined by one or more coded entries (FHIR [`CodeableConcept`]).
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Default)]
 pub struct CodeableConcept {
     #[serde(default)]
     pub coding: Vec<Coding>,
@@ -257,7 +257,7 @@ impl CodeableConcept {
 }
 
 /// A single coded entry within a [`CodeableConcept`], identified by system and code.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Default)]
 pub struct Coding {
     pub system: Option<String>,
     pub code: Option<String>,
@@ -266,7 +266,7 @@ pub struct Coding {
 
 /// A reference to another FHIR resource. Both fields are optional because real-world
 /// data may supply only a display name (no URL) or only a URL (no display).
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Default)]
 pub struct Reference {
     /// Relative or absolute URL, e.g. "Patient/noah-wyle"
     pub reference: Option<String>,
@@ -292,20 +292,20 @@ impl Reference {
 }
 
 /// Dosage instructions for a medication, including optional structured timing.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Default)]
 pub struct DosageInstruction {
     pub text: Option<String>,
     pub timing: Option<DosageTiming>,
 }
 
 /// Wraps the repeat schedule for a dosage timing (mirrors FHIR Timing.repeat structure).
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Default)]
 pub struct DosageTiming {
     pub repeat: Option<TimingRepeat>,
 }
 
 /// Frequency and period defining how often a medication dose repeats.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Default)]
 pub struct TimingRepeat {
     pub frequency: Option<u16>,
     /// FHIR defines this as a decimal to support fractional periods (e.g. 1.5 days).
@@ -316,7 +316,7 @@ pub struct TimingRepeat {
 }
 
 /// A measured value with optional unit and coding system.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Default)]
 pub struct Quantity {
     pub value: Option<f64>,
     pub unit: Option<String>,
@@ -325,7 +325,7 @@ pub struct Quantity {
 }
 
 /// A single component of a multi-part observation (e.g. systolic or diastolic pressure).
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Default)]
 pub struct ObservationComponent {
     pub code: Option<CodeableConcept>,
     #[serde(alias = "valueQuantity")]
@@ -333,13 +333,13 @@ pub struct ObservationComponent {
 }
 
 /// The actor who performed a procedure, wrapped to match FHIR's `performer[].actor` shape.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Default)]
 pub struct ProcedurePerformer {
     pub actor: Option<Reference>,
 }
 
 /// An entry in `DocumentReference.content`, wrapping an attachment.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Default)]
 pub struct DocumentContent {
     pub attachment: Option<Attachment>,
 }
@@ -355,7 +355,7 @@ pub struct Attachment {
 // === Non-standard resources === //
 
 /// A free-text clinical note written by a provider. Non-standard FHIR resource type.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Default)]
 pub struct ClinicalNote {
     pub id: String,
     pub status: Option<String>,

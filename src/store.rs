@@ -194,3 +194,142 @@ pub fn resource_id_from_typed_fhir_uri<'a>(resource_type: &str, url: &'a str) ->
     let (kind, raw_id) = &url.split_once('/')?;
     kind.eq_ignore_ascii_case(resource_type).then_some(raw_id)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::audit::DataQualityIssue;
+    use crate::store;
+    use std::fs;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn write_temp_data(contents: &str) -> std::path::PathBuf {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system clock should be after unix epoch")
+            .as_nanos();
+        let path = std::env::temp_dir().join(format!("novellia-store-test-{unique}.jsonl"));
+        fs::write(&path, contents).expect("test data should be writeable");
+        path
+    }
+
+    #[test]
+    fn load_records_parse_errors_in_quality_issues() {
+        let path = write_temp_data(
+            r#"
+{"resourceType":"Patient","id":"patient-1","name":[{"family":"Test","given":["Alice"]}]}
+{not valid json
+"#,
+        );
+
+        let store = Store::load(&path).expect("store should load valid rows despite parse errors");
+
+        assert!(
+            store
+                .quality_issues
+                .iter()
+                .any(|issue| matches!(issue, DataQualityIssue::ParseError { .. }))
+        );
+    }
+
+    #[test]
+    fn get_patient_is_case_insensitive() {
+        let path = write_temp_data(
+            r#"
+{"resourceType":"Patient","id":"patient-1","name":[{"family":"Test","given":["Alice"]}]}
+            "#,
+        );
+
+        let store = Store::load(&path).expect("store should load");
+
+        assert!(store.get_patient("patient-1").is_some());
+        assert!(store.get_patient("PATIENT-1").is_some());
+    }
+
+    #[test]
+    fn resource_with_unknown_patient_are_not_indexed_and_are_audited() {
+        let path = write_temp_data(
+            r#"
+{"resourceType":"Patient","id":"patient-1","name":[{"family":"Test","given":["Alice"]}]}
+{"resourceType":"Condition","id":"condition-orphan","code":{"coding":[{"code":"123"}]},"subject":{"reference":"Patient/missing-patient"}}
+        "#,
+        );
+
+        let store = Store::load(&path).expect("store should load");
+        let patient = store
+            .get_patient("patient-1")
+            .expect("known patient should exist");
+
+        assert!(store.get_patient("missing-patient").is_none());
+        assert!(patient.conditions.is_empty());
+
+        assert!(store.quality_issues.iter().any(|issue| {
+            matches!(
+                issue,
+                DataQualityIssue::UnresolvableReference {
+                        resource_type,
+                        id,
+                        reason,
+                    } if resource_type == "Condition"
+                        && id == "condition-orphan"
+                        && reason.contains("missing-patient"),
+            )
+        }));
+    }
+
+    #[test]
+    fn store_load_records_parse_errors_in_quality_issues() {
+        let path = write_temp_data(
+            r#"
+{"resourceType":"Patient","id":"patient-1","name":[{"family":"Test","given":["Alice"]}]}
+{not valid json
+        "#,
+        );
+
+        let store =
+            store::Store::load(&path).expect("store should load valid rows despite parse errors");
+
+        assert_eq!(store.patients.len(), 1);
+        assert!(
+            store
+                .quality_issues
+                .iter()
+                .any(|issue| matches!(issue, DataQualityIssue::ParseError { .. }))
+        );
+    }
+
+    #[test]
+    fn store_load_records_audit_issues() {
+        let path = write_temp_data(
+            r#"
+{"resourceType":"Patient","id":"patient-1","name":[],"birthDate":"bad-date"}
+{"resourceType":"Binary","id":"binary-1","contentType":"text/plain","data":"not base64"}
+        "#,
+        );
+
+        let store =
+            store::Store::load(&path).expect("store should load valid rows despite parse errors");
+
+        assert!(store.quality_issues.iter().any(|issue| {
+            matches!(
+                issue,
+                DataQualityIssue::MissingRequiredField {
+                    resource_type,
+                    field,
+                    ..
+                } if resource_type == "Patient" && field == "name"
+            )
+        }));
+
+        assert!(store.quality_issues.iter().any(|issue| {
+            matches!(
+                issue,
+                DataQualityIssue::InvalidField {
+                    resource_type,
+                    field,
+                    ..
+                } if resource_type == "Binary" && field == "data"
+            )
+        }));
+    }
+}

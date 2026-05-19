@@ -456,3 +456,365 @@ fn validate_date_iso8601(s: &str) -> bool {
             _ => false,
         })
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::fhir::Name;
+
+    fn patient(id: &str) -> fhir::FhirResource {
+        fhir::FhirResource::Patient(fhir::Patient {
+            id: id.to_string(),
+            name: vec![fhir::Name {
+                family: Some("Test".into()),
+                given: vec!["Alice".into()],
+                ..Default::default()
+            }],
+            birth_date: Some("1980-01-01".into()),
+            active: Some(true),
+            ..Default::default()
+        })
+    }
+
+    fn patient_ref(id: &str) -> fhir::Reference {
+        fhir::Reference {
+            reference: Some(format!("Patient/{id}")),
+            ..Default::default()
+        }
+    }
+
+    fn code(code: &str) -> fhir::CodeableConcept {
+        fhir::CodeableConcept {
+            coding: vec![fhir::Coding {
+                system: Some("test-system".into()),
+                code: Some(code.into()),
+                ..Default::default()
+            }],
+            ..Default::default()
+        }
+    }
+
+    fn observation(
+        id: &str,
+        status: &str,
+        patient_id: &str,
+        code_value: &str,
+    ) -> fhir::Observation {
+        fhir::Observation {
+            id: id.to_string(),
+            status: Some(status.to_string()),
+            code: Some(code(code_value)),
+            subject: patient_ref(patient_id),
+            effective_date_time: Some("2024-01-01".into()),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn audit_patient_reports_missing_name_and_invalid_birth_date() {
+        let resources = vec![fhir::FhirResource::Patient(fhir::Patient {
+            id: "patient-1".into(),
+            name: vec![Name::default()],
+            birth_date: Some("notadate".into()),
+            ..Default::default()
+        })];
+
+        let issues = audit_data_quality(&resources);
+
+        assert!(issues.iter().any(|issue| {
+            matches!(issue, DataQualityIssue::MissingRequiredField {
+                    resource_type,
+                    id,
+                    field,
+                } if resource_type == "Patient" && id == "patient-1" && field == "name"
+            )
+        }));
+
+        dbg!(&issues);
+        assert!(issues.iter().any(|issue| {
+            matches!(issue, DataQualityIssue::InvalidField {
+                    resource_type,
+                    id,
+                    field,
+                    reason,
+                } if resource_type == "Patient"
+                    && id == "patient-1"
+                    && field == "birthDate"
+                    && reason.contains("YYYY-MM-DD")
+            )
+        }));
+    }
+
+    #[test]
+    fn audit_binary_reports_missing_content_type_and_invalid_base64() {
+        let resources = vec![fhir::FhirResource::Binary(fhir::Binary {
+            id: "binary-1".into(),
+            content_type: None,
+            data: Some("not base64".into()),
+        })];
+
+        let issues = audit_data_quality(&resources);
+
+        assert!(issues.iter().any(|issue| {
+            matches!(
+                issue,
+                DataQualityIssue::MissingRequiredField {
+                    resource_type,
+                    id,
+                    field
+                } if resource_type == "Binary"
+                    && id == "binary-1"
+                    && field == "contentType"
+            )
+        }));
+
+        assert!(issues.iter().any(|issue| {
+            matches!(
+                issue,
+                DataQualityIssue::InvalidField {
+                    resource_type,
+                    id,
+                    field,
+                    reason,
+                } if resource_type == "Binary"
+                    && id == "binary-1"
+                    && field == "data"
+                    && reason.contains("base64")
+            )
+        }));
+    }
+
+    #[test]
+    fn audit_condition_reports_missing_code_and_unknown_patient_reference() {
+        let resources = vec![fhir::FhirResource::Condition(fhir::Condition {
+            id: "condition-1".into(),
+            subject: patient_ref("missing-patient"),
+            ..Default::default()
+        })];
+
+        let issues = audit_data_quality(&resources);
+
+        assert!(issues.iter().any(|issue| {
+            matches!(
+                issue,
+                DataQualityIssue::MissingRequiredField {
+                    resource_type,
+                    id,
+                    field
+                } if resource_type == "Condition"
+                    && id == "condition-1"
+                    && field == "code"
+            )
+        }));
+
+        assert!(issues.iter().any(|issue| {
+            matches!(
+                issue,
+                DataQualityIssue::UnresolvableReference {
+                    resource_type,
+                    id,
+                    reason,
+                } if resource_type == "Condition"
+                    && id == "condition-1"
+                    && reason.contains("missing-patient")
+            )
+        }));
+    }
+
+    #[test]
+    fn audit_document_reference_reports_missing_binary_reference() {
+        let resources = vec![
+            patient("patient-1"),
+            fhir::FhirResource::DocumentReference(fhir::DocumentReference {
+                id: "document-1".into(),
+                status: Some("current".into()),
+                subject: patient_ref("patient-1"),
+                content: vec![fhir::DocumentContent {
+                    attachment: Some(fhir::Attachment {
+                        content_type: Some("text/plain".into()),
+                        url: Some("Binary/missing-binary".into()),
+                    }),
+                }],
+                ..Default::default()
+            }),
+        ];
+
+        let issues = audit_data_quality(&resources);
+
+        assert!(issues.iter().any(|issue| {
+            matches!(
+                issue,
+                DataQualityIssue::UnresolvableReference {
+                    resource_type,
+                    id,
+                    reason,
+                } if resource_type == "DocumentReference"
+                    && id == "document-1"
+                    && reason.contains("missing-binary")
+            )
+        }));
+    }
+
+    #[test]
+    fn audit_document_reference_reports_content_type_mismatch() {
+        let resources = vec![
+            patient("patient-1"),
+            fhir::FhirResource::Binary(fhir::Binary {
+                id: "binary-1".into(),
+                content_type: Some("application/pdf".into()),
+                data: Some("SGVsbG8=".into()),
+            }),
+            fhir::FhirResource::DocumentReference(fhir::DocumentReference {
+                id: "document-1".into(),
+                status: Some("current".into()),
+                subject: patient_ref("patient-1"),
+                content: vec![fhir::DocumentContent {
+                    attachment: Some(fhir::Attachment {
+                        content_type: Some("text/plain".into()),
+                        url: Some("Binary/binary-1".into()),
+                    }),
+                }],
+                ..Default::default()
+            }),
+        ];
+
+        let issues = audit_data_quality(&resources);
+
+        assert!(issues.iter().any(|issue| {
+            matches!(
+                issue,
+                DataQualityIssue::InvalidField {
+                    resource_type,
+                    id,
+                    field,
+                    reason,
+                } if resource_type == "DocumentReference"
+                    && id == "document-1"
+                    && field == "content[0].attachment.contentType"
+                    && reason.contains("application/pdf")
+            )
+        }));
+    }
+
+    #[test]
+    fn audit_observation_reports_indeterminate_status() {
+        let resources = vec![
+            patient("patient-1"),
+            fhir::FhirResource::Observation(observation(
+                "observation-1",
+                "unknown",
+                "patient-1",
+                "8302-2",
+            )),
+        ];
+
+        let issues = audit_data_quality(&resources);
+
+        assert!(issues.iter().any(|issue| {
+            matches!(
+                issue,
+                DataQualityIssue::IndeterminateStatus {
+                    resource_type,
+                    id,
+                    status,
+                } if resource_type == "Observation"
+                    && id == "observation-1"
+                    && status == "unknown"
+            )
+        }));
+    }
+
+    #[test]
+    fn audit_duplicate_observations_reports_amended_resource() {
+        let resources = vec![
+            patient("patient-1"),
+            fhir::FhirResource::Observation(observation(
+                "observation-original",
+                "final",
+                "patient-1",
+                "8302-2",
+            )),
+            fhir::FhirResource::Observation(observation(
+                "observation-amended",
+                "amended",
+                "patient-1",
+                "8302-2",
+            )),
+        ];
+
+        let issues = audit_data_quality(&resources);
+
+        assert!(issues.iter().any(|issue| {
+            matches!(
+                issue,
+                DataQualityIssue::AmendedResource {
+                    resource_type,
+                    amended_ids,
+                    original_ids,
+                    patient_id,
+                } if resource_type == "Observation"
+                    && patient_id == "patient-1"
+                    && amended_ids == &vec!["observation-amended".to_string()]
+                    && original_ids == &vec!["observation-original".to_string()]
+            )
+        }));
+    }
+
+    #[test]
+    fn audit_duplicate_observations_without_amended_reports_duplicate_resource() {
+        let resources = vec![
+            patient("patient-1"),
+            fhir::FhirResource::Observation(observation(
+                "observation-1",
+                "final",
+                "patient-1",
+                "8302-2",
+            )),
+            fhir::FhirResource::Observation(observation(
+                "observation-2",
+                "final",
+                "patient-1",
+                "8302-2",
+            )),
+        ];
+
+        let issues = audit_data_quality(&resources);
+
+        assert!(issues.iter().any(|issue| {
+            matches!(
+                issue,
+                DataQualityIssue::DuplicateResource {
+                    resource_type,
+                    ids,
+                    patient_id,
+                    code,
+                    effective_date_time,
+                } if resource_type == "Observation"
+                    && patient_id == "patient-1"
+                    && ids == &vec!["observation-1".to_string(), "observation-2".to_string()]
+                    && code == "8302-2"
+                    && effective_date_time == "2024-01-01"
+            )
+        }));
+    }
+
+    #[test]
+    fn audit_unknown_resource_reports_reports_non_standard_resource() {
+        let resources = vec![fhir::FhirResource::Unknown {
+            resource_type: Some("CustomThing".into()),
+            id: Some("custom-1".into()),
+        }];
+
+        let issues = audit_data_quality(&resources);
+
+        assert!(issues.iter().any(|issue| {
+            matches!(
+                issue,
+                DataQualityIssue::NonStandardResourceType {
+                    resource_type,
+                    id,
+                } if resource_type == "CustomThing" && id == "custom-1"
+            )
+        }));
+    }
+}

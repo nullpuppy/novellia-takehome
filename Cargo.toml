@@ -14,3 +14,11 @@ anyhow = "1.0.102"
 base64 = "0.22.1"
 tower-http = { version = "0.6.10", features = ["trace", "normalize-path", "catch-panic"] }
 tower = "0.5.3"
+
+[[bin]]
+name = "novellia-takehome"
+path = "src/main.rs"
+
+[lib]
+name = "novellia_takehome"
+path = "src/lib.rs"
