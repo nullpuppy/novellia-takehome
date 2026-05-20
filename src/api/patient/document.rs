@@ -92,3 +92,17 @@ impl From<&fhir::DocumentReference> for DocumentSummary {
         }
     }
 }
+
+impl From<&fhir::Binary> for DocumentSummary {
+    fn from(value: &fhir::Binary) -> Self {
+        let content_type = value.content_type.clone();
+        let binary_id = value.id.clone();
+
+        Self {
+            id: binary_id.clone(),
+            binary_id: Some(binary_id),
+            content_type,
+            ..Default::default()
+        }
+    }
+}

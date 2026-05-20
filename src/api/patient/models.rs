@@ -132,6 +132,14 @@ pub struct PatientTimeline {
     pub timeline: Vec<PatientTimelineEntry>,
 }
 
+/// Binary metadata
+#[derive(Debug, Serialize)]
+pub struct Binary {
+    pub id: String,
+    #[serde(alias = "contentType")]
+    pub content_type: Option<String>,
+}
+
 //                           //
 // ======= DTO impls ======= //
 //                           //
@@ -314,6 +322,15 @@ impl From<&fhir::Patient> for PatientSummary {
             gender: value.gender.clone().filter(|s| !s.is_empty()),
             birth_date: value.birth_date.clone().filter(|s| !s.is_empty()),
             active: value.active,
+        }
+    }
+}
+
+impl From<&fhir::Binary> for Binary {
+    fn from(value: &fhir::Binary) -> Self {
+        Self {
+            id: value.id.clone(),
+            content_type: value.content_type.clone(),
         }
     }
 }

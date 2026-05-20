@@ -1,3 +1,4 @@
+pub mod binary;
 pub mod error;
 pub mod patient;
 
@@ -7,7 +8,7 @@ use axum::extract::State;
 use axum::response::IntoResponse;
 // --- Request Handlers ---
 
-/// GET data-quality
+/// GET `/data-quality`
 ///
 /// Returns parse and validation issues found while loading the dataset.
 ///

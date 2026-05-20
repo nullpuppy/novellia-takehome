@@ -12,7 +12,7 @@ use axum::response::IntoResponse;
 use models::{DocumentSummary, PatientSummary, PatientTimeline};
 use tracing::warn;
 
-/// GET /patients
+/// GET `/patients`
 ///
 /// List all [`PatientSummary`]s, sorted by patient id
 pub async fn list_patients(State(store): State<AppState>) -> impl IntoResponse {
@@ -29,7 +29,7 @@ pub async fn list_patients(State(store): State<AppState>) -> impl IntoResponse {
     Json(summaries)
 }
 
-/// GET /patients/{patient_id}
+/// GET `/patients/{patient_id}`
 ///
 /// Returns a single [`models::Patient`] by id
 ///
@@ -47,7 +47,7 @@ pub async fn get_patient(
     Ok(Json(patient.into()))
 }
 
-/// GET /patients/{patient_id}/conditions
+/// GET `/patients/{patient_id}/conditions`
 ///
 /// Returns patient [`models::Condition`]s, newest first
 ///
@@ -62,7 +62,7 @@ pub async fn get_patient_conditions(
     Ok(Json(conditions.iter().map(Into::into).collect()))
 }
 
-/// GET /patients/{patient_id}/conditions/{condition_id}
+/// GET `/patients/{patient_id}/conditions/{condition_id}`
 ///
 /// Returns specified patient [`models::Condition`]
 ///
@@ -76,9 +76,12 @@ pub async fn get_patient_condition(
         .require_patient(&patient_id)?
         .conditions
         .iter()
-        .filter_map(|condition| match condition_id == condition.id {
-            true => Some(condition.clone()),
-            false => None,
+        .filter_map(|condition| {
+            if condition_id == condition.id {
+                Some(condition.clone())
+            } else {
+                None
+            }
         })
         .collect();
     conditions.sort_by(|a, b| b.onset_date_time.cmp(&a.onset_date_time));
@@ -96,7 +99,7 @@ pub async fn get_patient_condition(
     Ok(Json(conditions.iter().map(Into::into).collect()))
 }
 
-/// GET patients/{patient_id}/medications
+/// GET `/patients/{patient_id}/medications`
 ///
 /// Returns patient [`models::Medication`]s, newest first
 ///
@@ -111,7 +114,7 @@ pub async fn get_patient_medications(
     Ok(Json(medications.iter().map(Into::into).collect()))
 }
 
-/// GET /patients/{patient_id}/medications/{medication_id}
+/// GET `/patients/{patient_id}/medications/{medication_id}`
 ///
 /// Returns specified patient [`models::Medication`]
 ///
@@ -136,9 +139,9 @@ pub async fn get_patient_medication(
     medications.sort_by(|a, b| b.authored_on.cmp(&a.authored_on));
 
     if medications.is_empty() {
-        return Err(AppError::NotFound(
-            format!("medication '{medication_id}' for patient '{patient_id}' not found"),
-        ));
+        return Err(AppError::NotFound(format!(
+            "medication '{medication_id}' for patient '{patient_id}' not found"
+        )));
     } else if medications.len() > 1 {
         // Note: This should probably return either BadResource, or maybe Conflict
         // Just logging a warning for now and returning all found
@@ -148,7 +151,7 @@ pub async fn get_patient_medication(
     Ok(Json(medications.iter().map(Into::into).collect()))
 }
 
-/// GET /patients/{id}/observations
+/// GET `/patients/{patient_id}/observations`
 ///
 /// Returns patient [`models::Observation`]s, newest first
 ///
@@ -170,7 +173,7 @@ pub async fn get_patient_observations(
     Ok(Json(observations.iter().map(Into::into).collect()))
 }
 
-/// GET /patients/{patient_id}/observation/{observation_id}
+/// GET `/patients/{patient_id}/observation/{observation_id}`
 ///
 /// Returns specified patient [`models::Observation`]
 ///
@@ -195,9 +198,9 @@ pub async fn get_patient_observation(
     observations.sort_by(|a, b| b.effective_date_time.cmp(&a.effective_date_time));
 
     if observations.is_empty() {
-        return Err(AppError::NotFound(
-            format!("condition '{observation_id}' for patient '{patient_id}' not found"),
-        ));
+        return Err(AppError::NotFound(format!(
+            "condition '{observation_id}' for patient '{patient_id}' not found"
+        )));
     } else if observations.len() > 1 {
         // Note: This should probably return either BadResource, or maybe Conflict
         // Just logging a warning for now and returning all found
@@ -207,7 +210,7 @@ pub async fn get_patient_observation(
     Ok(Json(observations.iter().map(Into::into).collect()))
 }
 
-/// GET patients/{patient_id}/procedures
+/// GET `/patients/{patient_id}/procedures`
 ///
 /// Returns patient [`models::Procedure`]s, newest first
 ///
@@ -222,7 +225,7 @@ pub async fn get_patient_procedures(
     Ok(Json(procedures.iter().map(Into::into).collect()))
 }
 
-/// GET /patients/{patient_id}/procedures/{procedure_id}
+/// GET `/patients/{patient_id}/procedures/{procedure_id}`
 ///
 /// Returns specified patient [`models::Procedure`]
 ///
@@ -247,9 +250,9 @@ pub async fn get_patient_procedure(
     procedures.sort_by(|a, b| b.performed_date_time.cmp(&a.performed_date_time));
 
     if procedures.is_empty() {
-        return Err(AppError::NotFound(
-            format!("procedure '{procedure_id}' for patient '{patient_id}' not found"),
-        ));
+        return Err(AppError::NotFound(format!(
+            "procedure '{procedure_id}' for patient '{patient_id}' not found"
+        )));
     } else if procedures.len() > 1 {
         // Note: This should probably return either BadResource, or maybe Conflict
         // Just logging a warning for now and returning all found
@@ -259,7 +262,7 @@ pub async fn get_patient_procedure(
     Ok(Json(procedures.iter().map(Into::into).collect()))
 }
 
-/// GET /patients/{patient_id}/documents
+/// GET `/patients/{patient_id}/documents`
 ///
 /// Returns [`DocumentSummary`]s for a patient, newest first.
 /// use GET /patients/{id}/documents/id to get the actual contents
@@ -283,8 +286,7 @@ pub async fn get_patient_documents(
     Ok(Json(docs))
 }
 
-#[allow(clippy::doc_markdown)]
-/// GET /patients/{patient_id}/documents/{doc_id}
+/// GET `/patients/{patient_id}/documents/{doc_id}`
 ///
 /// Returns decoded binary content for a specific patient document
 ///
@@ -330,7 +332,7 @@ pub async fn get_patient_document(
     Ok((StatusCode::OK, headers, content))
 }
 
-/// GET /patients/{patient_id}/timeline
+/// GET `/patients/{patient_id}/timeline`
 ///
 /// Returns a combined [`PatientTimeline`], newest resource first.
 ///

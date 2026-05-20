@@ -8,6 +8,8 @@ use tower::Layer;
 use tower_http::normalize_path::NormalizePathLayer;
 use tracing::info;
 
+const DEFAULT_DATA_PATH: &str = "data/backend-takehome-fhir-resources.txt";
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
@@ -18,7 +20,9 @@ async fn main() -> anyhow::Result<()> {
         .init();
 
     // Load data set
-    let data_path = "data/backend-takehome-fhir-resources.txt";
+    let data_path = std::env::args()
+        .nth(1)
+        .unwrap_or_else(|| DEFAULT_DATA_PATH.to_string());
     let store = store::Store::load(data_path)?;
 
     info!(

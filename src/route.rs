@@ -54,14 +54,8 @@ pub fn build_router(state: AppState) -> axum::Router {
             "/patients/{id}/timeline",
             get(patient::get_patient_timeline),
         )
-        // .route(
-        //     "/binary",
-        //     get(api::get_binaries),
-        // )
-        // .route(
-        //     "/binary/{id}",
-        //     get(api::get_binary)
-        // )
+        .route("/binary", get(api::binary::list_binaries))
+        .route("/binary/{binary_id}", get(api::binary::get_binary))
         // .route(
         //     "/resources/orphaned",
         //     resources::get_resources
