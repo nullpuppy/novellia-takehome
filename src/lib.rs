@@ -1,8 +1,4 @@
-#![warn(
-    clippy::pedantic,
-    clippy::all,
-    clippy::nursery,
-)]
+#![warn(clippy::pedantic, clippy::all, clippy::nursery)]
 
 use std::sync::Arc;
 

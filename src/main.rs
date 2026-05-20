@@ -1,8 +1,4 @@
-#![warn(
-    clippy::pedantic,
-    clippy::all,
-    clippy::nursery,
-)]
+#![warn(clippy::pedantic, clippy::all, clippy::nursery)]
 
 use axum::ServiceExt;
 use novellia_takehome::route::build_router;
@@ -40,7 +36,9 @@ async fn main() -> anyhow::Result<()> {
     let app = build_router(state);
     let app = NormalizePathLayer::trim_trailing_slash().layer(app);
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3100").await?;
+    let addr = "0.0.0.0:3100";
+    let listener = tokio::net::TcpListener::bind(addr).await?;
+    info!("{} api running at {}", env!("CARGO_PKG_NAME"), addr);
     axum::serve(
         listener,
         ServiceExt::<axum::extract::Request>::into_make_service(app),

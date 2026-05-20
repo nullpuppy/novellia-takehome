@@ -530,7 +530,6 @@ mod test {
             )
         }));
 
-        dbg!(&issues);
         assert!(issues.iter().any(|issue| {
             matches!(issue, DataQualityIssue::InvalidField {
                     resource_type,

@@ -173,7 +173,7 @@ pub async fn get_patient_observations(
     Ok(Json(observations.iter().map(Into::into).collect()))
 }
 
-/// GET `/patients/{patient_id}/observation/{observation_id}`
+/// GET `/patients/{patient_id}/observations/{observation_id}`
 ///
 /// Returns specified patient [`models::Observation`]
 ///

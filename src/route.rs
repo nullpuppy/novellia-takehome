@@ -54,12 +54,8 @@ pub fn build_router(state: AppState) -> axum::Router {
             "/patients/{id}/timeline",
             get(patient::get_patient_timeline),
         )
-        .route("/binary", get(api::binary::list_binaries))
-        .route("/binary/{binary_id}", get(api::binary::get_binary))
-        // .route(
-        //     "/resources/orphaned",
-        //     resources::get_resources
-        // )
+        .route("/binaries", get(api::binary::list_binaries))
+        .route("/binaries/{binary_id}", get(api::binary::get_binary))
         .route("/data-quality", get(api::get_data_quality))
         .layer(CatchPanicLayer::custom(|_| {
             AppError::Internal(anyhow::anyhow!("panic in handler")).into_response()

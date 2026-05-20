@@ -40,7 +40,7 @@ impl Store {
     /// `quality_issues` for future inspection via api call
     ///
     /// # Errors
-    /// [`std::io::Error`] file could not be openned or read
+    /// [`std::io::Error`] file could not be opened or read
     pub fn load(path: impl AsRef<std::path::Path>) -> anyhow::Result<Self> {
         let content = fs::read_to_string(path)?;
         let mut resources: Vec<fhir::FhirResource> = Vec::new();
