@@ -12,7 +12,7 @@ use tower::Layer;
 use tower_http::normalize_path::NormalizePathLayer;
 use tracing::info;
 
-const DEFAULT_DATA_PATH: &str = "data/backend-takehome-fhir-resources.txt";
+const DEFAULT_DATA_PATH: &str = "data/backend-takehome-fhir-resources.jsonl";
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
