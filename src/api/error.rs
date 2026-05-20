@@ -20,9 +20,9 @@ pub enum AppError {
 impl core::fmt::Display for AppError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let content = match self {
-            AppError::NotFound(msg) => format!("Not Found, msg: {msg}"),
-            AppError::BadResource(msg) => format!("Bad Resource, msg: {msg}"),
-            AppError::Internal(err) => format!("Internal, err: {err}"),
+            Self::NotFound(msg) => format!("Not Found, msg: {msg}"),
+            Self::BadResource(msg) => format!("Bad Resource, msg: {msg}"),
+            Self::Internal(err) => format!("Internal, err: {err}"),
         };
 
         write!(f, "{content}")
@@ -34,15 +34,15 @@ impl std::error::Error for AppError {}
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         let (status, msg) = match self {
-            AppError::NotFound(msg) => {
+            Self::NotFound(msg) => {
                 error!("not found: {msg}");
                 (StatusCode::NOT_FOUND, msg)
             }
-            AppError::Internal(err) => {
+            Self::Internal(err) => {
                 error!("internal error: {err:#}");
                 (StatusCode::INTERNAL_SERVER_ERROR, "internal error".into())
             }
-            AppError::BadResource(msg) => (StatusCode::BAD_REQUEST, msg),
+            Self::BadResource(msg) => (StatusCode::BAD_REQUEST, msg),
         };
 
         (status, Json(serde_json::json!({ "error": msg }))).into_response()
@@ -51,6 +51,6 @@ impl IntoResponse for AppError {
 
 impl From<anyhow::Error> for AppError {
     fn from(err: anyhow::Error) -> Self {
-        AppError::Internal(err)
+        Self::Internal(err)
     }
 }

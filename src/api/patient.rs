@@ -87,9 +87,9 @@ pub async fn get_patient_condition(
     conditions.sort_by(|a, b| b.onset_date_time.cmp(&a.onset_date_time));
 
     if conditions.is_empty() {
-        return Err(AppError::NotFound(
-            "condition '{condition_id}' for patient '{id}' not found".into(),
-        ));
+        return Err(AppError::NotFound(format!(
+            "condition '{condition_id}' for patient '{patient_id}' not found"
+        )));
     } else if conditions.len() > 1 {
         // Note: This should probably return either BadResource, or maybe Conflict
         // Just logging a warning for now and returning all found

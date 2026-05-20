@@ -73,15 +73,15 @@ impl FromStr for ResourceType {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let s = s.trim();
         match s.to_lowercase().as_ref() {
-            "patient" => Ok(ResourceType::Patient),
-            "condition" => Ok(ResourceType::Condition),
-            "medicationrequest" => Ok(ResourceType::MedicationRequest),
-            "observation" => Ok(ResourceType::Observation),
-            "procedure" => Ok(ResourceType::Procedure),
-            "binary" => Ok(ResourceType::Binary),
-            "documentreference" => Ok(ResourceType::DocumentReference),
-            "clinicalnote" => Ok(ResourceType::ClinicalNote),
-            _ => Ok(ResourceType::Unknown(s.to_string())),
+            "patient" => Ok(Self::Patient),
+            "condition" => Ok(Self::Condition),
+            "medicationrequest" => Ok(Self::MedicationRequest),
+            "observation" => Ok(Self::Observation),
+            "procedure" => Ok(Self::Procedure),
+            "binary" => Ok(Self::Binary),
+            "documentreference" => Ok(Self::DocumentReference),
+            "clinicalnote" => Ok(Self::ClinicalNote),
+            _ => Ok(Self::Unknown(s.to_string())),
         }
     }
 }
@@ -385,16 +385,16 @@ impl FhirResource {
             .unwrap_or("unknown")
             .to_lowercase();
 
-        let resource: FhirResource = match resource_type.as_str() {
-            "patient" => FhirResource::Patient(serde_json::from_value(value)?),
-            "condition" => FhirResource::Condition(serde_json::from_value(value)?),
-            "medicationrequest" => FhirResource::MedicationRequest(serde_json::from_value(value)?),
-            "observation" => FhirResource::Observation(serde_json::from_value(value)?),
-            "procedure" => FhirResource::Procedure(serde_json::from_value(value)?),
-            "binary" => FhirResource::Binary(serde_json::from_value(value)?),
-            "documentreference" => FhirResource::DocumentReference(serde_json::from_value(value)?),
-            "clinicalnote" => FhirResource::ClinicalNote(serde_json::from_value(value)?),
-            _ => FhirResource::Unknown {
+        let resource: Self = match resource_type.as_str() {
+            "patient" => Self::Patient(serde_json::from_value(value)?),
+            "condition" => Self::Condition(serde_json::from_value(value)?),
+            "medicationrequest" => Self::MedicationRequest(serde_json::from_value(value)?),
+            "observation" => Self::Observation(serde_json::from_value(value)?),
+            "procedure" => Self::Procedure(serde_json::from_value(value)?),
+            "binary" => Self::Binary(serde_json::from_value(value)?),
+            "documentreference" => Self::DocumentReference(serde_json::from_value(value)?),
+            "clinicalnote" => Self::ClinicalNote(serde_json::from_value(value)?),
+            _ => Self::Unknown {
                 resource_type: Some(resource_type.clone()),
                 id: value["id"].as_str().map(String::from),
             },

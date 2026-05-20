@@ -244,7 +244,7 @@ fn audit_binary(binary: &fhir::Binary, issues: &mut Vec<DataQualityIssue>) {
             {
                 issues.push(DataQualityIssue::InvalidField {
                     resource_type: resource_type.to_string(),
-                    id: id.clone(),
+                    id,
                     field: "data".into(),
                     reason: "data is not valid base64".into(),
                 });
@@ -253,7 +253,7 @@ fn audit_binary(binary: &fhir::Binary, issues: &mut Vec<DataQualityIssue>) {
         _ => {
             issues.push(DataQualityIssue::MissingRequiredField {
                 resource_type: resource_type.to_string(),
-                id: id.clone(),
+                id,
                 field: "data".into(),
             });
         }

@@ -66,7 +66,7 @@ impl Store {
 
         issues.extend(audit::audit_data_quality(&resources));
 
-        let mut store = Store {
+        let mut store = Self {
             patients: HashMap::new(),
             binaries: HashMap::new(),
             quality_issues: issues,

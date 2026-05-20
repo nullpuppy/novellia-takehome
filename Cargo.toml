@@ -1,7 +1,9 @@
 [package]
 name = "novellia-takehome"
+description = "Rust service that imports fhir-formatted data and provides an api to view that data"
 version = "0.1.0"
 edition = "2024"
+repository = "https://github.com/nullpuppy/novellia-takehome"
 
 [dependencies]
 axum = "0.8.9"

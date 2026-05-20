@@ -1,4 +1,8 @@
-#![warn(clippy::pedantic)]
+#![warn(
+    clippy::pedantic,
+    clippy::all,
+    clippy::nursery,
+)]
 
 use axum::ServiceExt;
 use novellia_takehome::route::build_router;

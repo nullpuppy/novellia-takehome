@@ -146,7 +146,7 @@ pub struct Binary {
 
 impl From<&fhir::CodeableConcept> for Code {
     fn from(value: &fhir::CodeableConcept) -> Self {
-        Code {
+        Self {
             system: value
                 .coding
                 .first()
@@ -164,7 +164,7 @@ impl From<&fhir::CodeableConcept> for Code {
 
 impl From<&fhir::Patient> for Patient {
     fn from(value: &fhir::Patient) -> Self {
-        Patient {
+        Self {
             id: value.id.clone(),
             name: value.display_name(),
             gender: value.gender.clone().filter(|s| !s.is_empty()),
@@ -183,7 +183,7 @@ fn codeable_concept_summary(cc: &fhir::CodeableConcept) -> Option<String> {
 
 impl From<&fhir::Condition> for Condition {
     fn from(value: &fhir::Condition) -> Self {
-        Condition {
+        Self {
             id: value.id.clone(),
             code: value.code.as_ref().map(Into::into),
             clinical_status: value
@@ -196,28 +196,26 @@ impl From<&fhir::Condition> for Condition {
                 .and_then(codeable_concept_summary),
             onset: value.onset_date_time.clone(),
             abatement: value.abatement_date_time.clone(),
-            recorder: match &value.recorder {
-                None => None,
-                Some(reference) => match &reference.display {
-                    Some(r) => Some(r.clone()),
-                    None => reference.reference.clone(),
-                },
-            },
+            recorder: value.recorder.as_ref().and_then(|reference| {
+                reference
+                    .display
+                    .as_ref()
+                    .map_or_else(|| reference.reference.clone(), |r| Some(r.clone()))
+            }),
         }
     }
 }
 
 impl From<&fhir::DosageInstruction> for Dosage {
     fn from(value: &fhir::DosageInstruction) -> Self {
-        let (frequency, period, period_unit) = match &value.timing {
-            None => (None, None, None),
-            Some(dt) => match &dt.repeat {
-                None => (None, None, None),
-                Some(tr) => (tr.frequency, tr.period, tr.period_unit.clone()),
-            },
-        };
+        let (frequency, period, period_unit) =
+            value.timing.as_ref().map_or((None, None, None), |dt| {
+                dt.repeat.as_ref().map_or((None, None, None), |tr| {
+                    (tr.frequency, tr.period, tr.period_unit.clone())
+                })
+            });
 
-        Dosage {
+        Self {
             text: value.text.clone(),
             frequency,
             period,
@@ -228,7 +226,7 @@ impl From<&fhir::DosageInstruction> for Dosage {
 
 impl From<&fhir::MedicationRequest> for Medication {
     fn from(value: &fhir::MedicationRequest) -> Self {
-        Medication {
+        Self {
             id: value.id.clone(),
             status: value.status.clone(),
             intent: value.intent.clone(),
@@ -245,7 +243,7 @@ impl From<&fhir::MedicationRequest> for Medication {
 
 impl From<&fhir::ObservationComponent> for ObservationComponent {
     fn from(value: &fhir::ObservationComponent) -> Self {
-        ObservationComponent {
+        Self {
             code: value.code.as_ref().map(Into::into),
             value: value
                 .value_quantity
@@ -259,7 +257,7 @@ impl From<&fhir::ObservationComponent> for ObservationComponent {
 
 impl From<&fhir::Observation> for Observation {
     fn from(value: &fhir::Observation) -> Self {
-        Observation {
+        Self {
             id: value.id.clone(),
             status: value.status.clone(),
             code: value.code.as_ref().map(Into::into),
@@ -267,35 +265,47 @@ impl From<&fhir::Observation> for Observation {
             performers: value
                 .performer
                 .iter()
-                .map(|r| match &r.display {
-                    Some(d) => d.clone(),
-                    None => r.reference.clone().unwrap_or_default(),
+                .map(|r| {
+                    r.display.as_ref().map_or_else(
+                        || r.reference.clone().unwrap_or_default(),
+                        std::clone::Clone::clone,
+                    )
                 })
                 .collect(),
             // Intentional ordering by the best expected quality of data
-            value: if let Some(quality) = &value.value_quantity {
-                Some(ObservationValue::Quantity {
-                    value: quality.value.unwrap_or_default(),
-                    unit: quality.unit.clone(),
-                })
-            } else if let Some(text) = &value.value_string {
-                Some(ObservationValue::Text {
-                    value: text.clone(),
-                })
-            } else if !value.component.is_empty() {
-                Some(ObservationValue::Components {
-                    items: value.component.iter().map(Into::into).collect(),
-                })
-            } else {
-                None
-            },
+            value: value.value_quantity.as_ref().map_or_else(
+                || {
+                    value.value_string.as_ref().map_or_else(
+                        || {
+                            if value.component.is_empty() {
+                                None
+                            } else {
+                                Some(ObservationValue::Components {
+                                    items: value.component.iter().map(Into::into).collect(),
+                                })
+                            }
+                        },
+                        |text| {
+                            Some(ObservationValue::Text {
+                                value: text.clone(),
+                            })
+                        },
+                    )
+                },
+                |quality| {
+                    Some(ObservationValue::Quantity {
+                        value: quality.value.unwrap_or_default(),
+                        unit: quality.unit.clone(),
+                    })
+                },
+            ),
         }
     }
 }
 
 impl From<&fhir::Procedure> for Procedure {
     fn from(value: &fhir::Procedure) -> Self {
-        Procedure {
+        Self {
             id: value.id.clone(),
             status: value.status.clone(),
             code: value.code.as_ref().map(Into::into),
@@ -316,7 +326,7 @@ impl From<&fhir::Procedure> for Procedure {
 
 impl From<&fhir::Patient> for PatientSummary {
     fn from(value: &fhir::Patient) -> Self {
-        PatientSummary {
+        Self {
             id: value.id.clone(),
             name: value.display_name(),
             gender: value.gender.clone().filter(|s| !s.is_empty()),
