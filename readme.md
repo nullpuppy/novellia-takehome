@@ -219,10 +219,10 @@ Not Found errors are returned as 404s.
   - test coverage and documentation discussions and drafting
   - reasoning FHIR models and parsing sample data to generate a base schema
 
-Some code generation was done in chat with the above discussions, not agent/automated code generation
-usage with one tiny exception. I did use an agent to change field visibility
-in the FHIR structs since the majority needed to be updated (all it did was add pub to the beginning of each
-field on those structs).
+Some code generation was done in chat with the above discussions, no agent/automated code generation
+usage was used, but there was one tiny usage of agent editing used where it just changed the field visibility
+in the [FHIR structs](src/fhir.rs) as I had initially written them with the wrong visibility. (All it did was 
+add pub to the beginning of each field on those structs.)
 
 - Postman AI
   - Generated openapi.yaml by inspecting the code base.
