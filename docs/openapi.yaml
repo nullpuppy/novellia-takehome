@@ -1,0 +1,974 @@
+openapi: 3.0.3
+info:
+  title: Novellia FHIR API
+  version: 1.0.0
+  description: >
+    A FHIR-backed REST API for patient health records. Serves data from an
+    in-memory store loaded from a FHIR JSONL data file. No authentication
+    required.
+
+servers:
+  - url: http://localhost:3100
+    description: Local development server
+
+paths:
+  /patients:
+    get:
+      summary: List all patients
+      description: Returns a list of all patient summaries in the system.
+      operationId: listPatients
+      tags:
+        - Patients
+      responses:
+        '200':
+          description: A list of patient summaries.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PatientSummary'
+              example:
+                - id: noah-wyle
+                  name: Noah Wyle
+                  birth_date: '1971-06-04'
+                  gender: male
+                  active: true
+
+  /patients/{id}:
+    get:
+      summary: Get a patient by ID
+      description: >
+        Returns full patient details for the given patient ID. Patient IDs are
+        case-insensitive.
+      operationId: getPatient
+      tags:
+        - Patients
+      parameters:
+        - $ref: '#/components/parameters/PatientId'
+      responses:
+        '200':
+          description: Full patient details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Patient'
+              example:
+                id: noah-wyle
+                name: Noah Wyle
+                birth_date: '1971-06-04'
+                gender: male
+                active: true
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /patients/{id}/conditions:
+    get:
+      summary: Get conditions for a patient
+      description: Returns all conditions (diagnoses) for the given patient.
+      operationId: getPatientConditions
+      tags:
+        - Conditions
+      parameters:
+        - $ref: '#/components/parameters/PatientId'
+      responses:
+        '200':
+          description: A list of conditions for the patient.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Condition'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /patients/{id}/conditions/{condition_id}:
+    get:
+      summary: Get a condition by ID
+      description: Returns a single condition resource for the given patient.
+      operationId: getPatientCondition
+      tags:
+        - Conditions
+      parameters:
+        - $ref: '#/components/parameters/PatientId'
+        - name: condition_id
+          in: path
+          required: true
+          description: The condition resource ID.
+          schema:
+            type: string
+            example: cond-001
+      responses:
+        '200':
+          description: A single condition resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Condition'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /patients/{id}/medications:
+    get:
+      summary: Get medications for a patient
+      description: Returns all medication requests for the given patient.
+      operationId: getPatientMedications
+      tags:
+        - Medications
+      parameters:
+        - $ref: '#/components/parameters/PatientId'
+      responses:
+        '200':
+          description: A list of medication requests for the patient.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Medication'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /patients/{id}/medications/{medication_id}:
+    get:
+      summary: Get a medication request by ID
+      description: Returns a single medication request resource for the given patient.
+      operationId: getPatientMedication
+      tags:
+        - Medications
+      parameters:
+        - $ref: '#/components/parameters/PatientId'
+        - name: medication_id
+          in: path
+          required: true
+          description: The medication request resource ID.
+          schema:
+            type: string
+            example: med-001
+      responses:
+        '200':
+          description: A single medication request resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Medication'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /patients/{id}/observations:
+    get:
+      summary: Get observations for a patient
+      description: >
+        Returns all observations (vitals, labs) for the given patient. Duplicate
+        observations (same code + datetime) are deduplicated, with 'amended'
+        status taking precedence.
+      operationId: getPatientObservations
+      tags:
+        - Observations
+      parameters:
+        - $ref: '#/components/parameters/PatientId'
+      responses:
+        '200':
+          description: A list of observations for the patient.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Observation'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /patients/{id}/observations/{observation_id}:
+    get:
+      summary: Get an observation by ID
+      description: Returns a single observation resource for the given patient.
+      operationId: getPatientObservation
+      tags:
+        - Observations
+      parameters:
+        - $ref: '#/components/parameters/PatientId'
+        - name: observation_id
+          in: path
+          required: true
+          description: The observation resource ID.
+          schema:
+            type: string
+            example: obs-001
+      responses:
+        '200':
+          description: A single observation resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Observation'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /patients/{id}/procedures:
+    get:
+      summary: Get procedures for a patient
+      description: Returns all procedures performed for the given patient.
+      operationId: getPatientProcedures
+      tags:
+        - Procedures
+      parameters:
+        - $ref: '#/components/parameters/PatientId'
+      responses:
+        '200':
+          description: A list of procedures for the patient.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Procedure'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /patients/{id}/procedures/{procedure_id}:
+    get:
+      summary: Get a procedure by ID
+      description: Returns a single procedure resource for the given patient.
+      operationId: getPatientProcedure
+      tags:
+        - Procedures
+      parameters:
+        - $ref: '#/components/parameters/PatientId'
+        - name: procedure_id
+          in: path
+          required: true
+          description: The procedure resource ID.
+          schema:
+            type: string
+            example: proc-001
+      responses:
+        '200':
+          description: A single procedure resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Procedure'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /patients/{id}/documents:
+    get:
+      summary: List documents for a patient
+      description: >
+        Returns a list of document summaries for the given patient, sorted by
+        date descending. Each entry includes the document ID, status, date,
+        authors, content type, and a reference to the backing binary resource.
+        Use GET /patients/{id}/documents/{doc_id} to retrieve the full binary
+        content of a specific document.
+      operationId: getPatientDocuments
+      tags:
+        - Documents
+      parameters:
+        - $ref: '#/components/parameters/PatientId'
+      responses:
+        '200':
+          description: A list of document summaries for the patient.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DocumentSummary'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /patients/{id}/documents/{doc_id}:
+    get:
+      summary: Get a document by ID
+      description: >
+        Returns the raw binary content of the specified document for the given
+        patient. The response Content-Type header reflects the document's
+        original MIME type (e.g. text/plain, application/pdf).
+      operationId: getPatientDocument
+      tags:
+        - Documents
+      parameters:
+        - $ref: '#/components/parameters/PatientId'
+        - name: doc_id
+          in: path
+          required: true
+          description: The document resource ID.
+          schema:
+            type: string
+            example: doc-001
+      responses:
+        '200':
+          description: Raw binary content of the document.
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /patients/{id}/timeline:
+    get:
+      summary: Get timeline for a patient
+      description: >
+        Returns a unified chronological timeline of all resource types
+        (conditions, medications, observations, procedures, documents) for the
+        given patient, sorted newest-first. Each entry includes the resource
+        type, date, and the full serialized resource payload.
+      operationId: getPatientTimeline
+      tags:
+        - Timeline
+      parameters:
+        - $ref: '#/components/parameters/PatientId'
+      responses:
+        '200':
+          description: A unified timeline of events for the patient.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientTimeline'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /binaries:
+    get:
+      summary: List all binary resources
+      description: >
+        Returns a list of all binary resource metadata entries in the store.
+        Binary resources back patient documents and can be fetched by ID via
+        GET /binaries/{binary_id}.
+      operationId: listBinaries
+      tags:
+        - Binary
+      responses:
+        '200':
+          description: A list of binary resource metadata entries.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Binary'
+
+  /binaries/{binary_id}:
+    get:
+      summary: Get binary content by ID
+      description: >
+        Returns the raw binary content for the given binary resource ID. The
+        response Content-Type header reflects the binary's original MIME type.
+      operationId: getBinary
+      tags:
+        - Binary
+      parameters:
+        - name: binary_id
+          in: path
+          required: true
+          description: The binary resource ID.
+          schema:
+            type: string
+            example: binary-001
+      responses:
+        '200':
+          description: Raw binary content.
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '400':
+          description: Binary found but could not be loaded or decoded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /data-quality:
+    get:
+      summary: Get data quality report
+      description: >
+        Returns a report of data quality issues detected in the FHIR data,
+        including parse errors, missing required fields, unresolvable
+        references, indeterminate statuses, case mismatch references, duplicate
+        resources, amended resources, invalid fields, and non-standard resource
+        types.
+      operationId: getDataQuality
+      tags:
+        - Data Quality
+      responses:
+        '200':
+          description: A list of data quality issues found in the FHIR data.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DataQualityIssue'
+
+components:
+  parameters:
+    PatientId:
+      name: id
+      in: path
+      required: true
+      description: >
+        Patient ID (e.g. noah-wyle, tracy-ifeachor, patrick-ball,
+        katherine-lanasa, supriya-ganesh, fiona-dourif, taylor-dearden,
+        isa-briones, gerran-howell, shabana-azeez, sepideh-moafi,
+        ayesha-harris, shawn-hatosy, jalen-thomas-brooks,
+        kristin-villanueva, brandon-mendez-homer). Case-insensitive.
+      schema:
+        type: string
+        example: noah-wyle
+
+  responses:
+    NotFound:
+      description: The requested resource was not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Not found
+
+  schemas:
+    Code:
+      type: object
+      description: >
+        A coded concept from a clinical terminology system (e.g. SNOMED CT,
+        LOINC, RxNorm). Maps from FHIR CodeableConcept.
+      properties:
+        system:
+          type: string
+          description: The URI of the coding system.
+          example: http://snomed.info/sct
+          nullable: true
+        code:
+          type: string
+          description: The code value within the system.
+          example: '44054006'
+          nullable: true
+        display:
+          type: string
+          description: Human-readable display text for the code.
+          example: Diabetes mellitus type 2
+          nullable: true
+
+    PatientSummary:
+      type: object
+      description: A brief summary of a patient record.
+      required:
+        - id
+      properties:
+        id:
+          type: string
+          description: Unique patient identifier.
+          example: noah-wyle
+        name:
+          type: string
+          description: Full name of the patient.
+          example: Noah Wyle
+          nullable: true
+        birth_date:
+          type: string
+          format: date
+          description: Patient date of birth in ISO 8601 format (YYYY-MM-DD).
+          example: '1971-06-04'
+          nullable: true
+        gender:
+          type: string
+          description: Patient gender.
+          example: male
+          nullable: true
+        active:
+          type: boolean
+          description: Whether the patient record is active.
+          example: true
+          nullable: true
+
+    Patient:
+      type: object
+      description: Full details of a patient record.
+      required:
+        - id
+      properties:
+        id:
+          type: string
+          description: Unique patient identifier.
+          example: noah-wyle
+        name:
+          type: string
+          description: Full name of the patient.
+          example: Noah Wyle
+          nullable: true
+        birth_date:
+          type: string
+          format: date
+          description: Patient date of birth in ISO 8601 format (YYYY-MM-DD).
+          example: '1971-06-04'
+          nullable: true
+        gender:
+          type: string
+          description: Patient gender.
+          example: male
+          nullable: true
+        active:
+          type: boolean
+          description: Whether the patient record is active.
+          example: true
+
+    Condition:
+      type: object
+      description: A clinical condition (diagnosis) associated with a patient.
+      required:
+        - id
+      properties:
+        id:
+          type: string
+          description: Unique condition resource identifier.
+          example: cond-001
+        code:
+          $ref: '#/components/schemas/Code'
+          nullable: true
+        clinical_status:
+          type: string
+          description: >
+            Clinical status of the condition (e.g. active, resolved, inactive,
+            remission). Derived from the FHIR clinicalStatus CodeableConcept.
+          example: active
+          nullable: true
+        verification_status:
+          type: string
+          description: >
+            Verification status of the condition (e.g. confirmed, provisional,
+            unconfirmed, refuted). Derived from the FHIR verificationStatus
+            CodeableConcept.
+          example: confirmed
+          nullable: true
+        onset:
+          type: string
+          description: Date or datetime the condition was first observed (ISO 8601).
+          example: '2015-03-10'
+          nullable: true
+        abatement:
+          type: string
+          description: Date or datetime the condition resolved or abated (ISO 8601).
+          example: '2016-04-01'
+          nullable: true
+        recorder:
+          type: string
+          description: >
+            Display name or reference of the practitioner who recorded the
+            condition.
+          example: Dr. Jane Smith
+          nullable: true
+
+    Dosage:
+      type: object
+      description: Dosage instructions for a medication request.
+      properties:
+        text:
+          type: string
+          description: Free-text dosage instructions.
+          example: Take 1 tablet twice daily with food
+          nullable: true
+        frequency:
+          type: integer
+          description: Number of times per period the medication is taken.
+          example: 2
+          nullable: true
+        period:
+          type: number
+          description: Duration of the period over which frequency applies.
+          example: 1
+          nullable: true
+        period_unit:
+          type: string
+          description: Unit of the period (e.g. d for day, h for hour, wk for week).
+          example: d
+          nullable: true
+
+    Medication:
+      type: object
+      description: A medication request associated with a patient.
+      required:
+        - id
+      properties:
+        id:
+          type: string
+          description: Unique medication request resource identifier.
+          example: med-001
+        status:
+          type: string
+          description: >
+            Status of the medication request (e.g. active, stopped, completed,
+            cancelled).
+          example: active
+          nullable: true
+        intent:
+          type: string
+          description: >
+            Intent of the medication request (e.g. order, plan, proposal).
+          example: order
+          nullable: true
+        medication:
+          $ref: '#/components/schemas/Code'
+          nullable: true
+        prescribed_at:
+          type: string
+          description: Date the medication was prescribed (ISO 8601).
+          example: '2015-04-01'
+          nullable: true
+        requester:
+          type: string
+          description: >
+            Display name or reference of the practitioner who requested the
+            medication.
+          example: Dr. Jane Smith
+          nullable: true
+        dosage:
+          type: array
+          description: List of dosage instructions for this medication request.
+          items:
+            $ref: '#/components/schemas/Dosage'
+
+    ObservationComponent:
+      type: object
+      description: >
+        A single component within a multi-component observation (e.g. systolic
+        or diastolic within a blood pressure reading).
+      properties:
+        code:
+          $ref: '#/components/schemas/Code'
+          nullable: true
+        value:
+          type: number
+          description: Numeric value of the component.
+          example: 120
+        unit:
+          type: string
+          description: Unit of measurement for the component.
+          example: mmHg
+          nullable: true
+
+    ObservationValueQuantity:
+      type: object
+      description: A numeric quantity observation value with a unit.
+      required:
+        - type
+        - value
+      properties:
+        type:
+          type: string
+          enum:
+            - quantity
+          description: Discriminator tag (snake_case, matches serde rename_all).
+        value:
+          type: number
+          description: Numeric measurement value.
+          example: 175.3
+        unit:
+          type: string
+          description: Unit of measurement.
+          example: cm
+          nullable: true
+
+    ObservationValueText:
+      type: object
+      description: A free-text observation value.
+      required:
+        - type
+        - value
+      properties:
+        type:
+          type: string
+          enum:
+            - text
+          description: Discriminator tag (snake_case, matches serde rename_all).
+        value:
+          type: string
+          description: Free-text observation result.
+          example: Negative
+
+    ObservationValueComponents:
+      type: object
+      description: >
+        A multi-component observation value (e.g. blood pressure with systolic
+        and diastolic readings).
+      required:
+        - type
+        - items
+      properties:
+        type:
+          type: string
+          enum:
+            - components
+          description: Discriminator tag (snake_case, matches serde rename_all).
+        items:
+          type: array
+          description: List of individual observation components.
+          items:
+            $ref: '#/components/schemas/ObservationComponent'
+
+    ObservationValue:
+      description: >
+        The value of an observation. Discriminated by the `type` field
+        (snake_case: quantity, text, components). Matches the Rust
+        ObservationValue enum serialized with serde tag + rename_all =
+        "snake_case".
+      oneOf:
+        - $ref: '#/components/schemas/ObservationValueQuantity'
+        - $ref: '#/components/schemas/ObservationValueText'
+        - $ref: '#/components/schemas/ObservationValueComponents'
+      discriminator:
+        propertyName: type
+        mapping:
+          quantity: '#/components/schemas/ObservationValueQuantity'
+          text: '#/components/schemas/ObservationValueText'
+          components: '#/components/schemas/ObservationValueComponents'
+
+    Observation:
+      type: object
+      description: A clinical observation (vital sign, lab result, etc.) for a patient.
+      required:
+        - id
+      properties:
+        id:
+          type: string
+          description: Unique observation resource identifier.
+          example: obs-001
+        status:
+          type: string
+          description: >
+            Observation status (e.g. final, amended, preliminary, cancelled).
+            When duplicates exist (same code + datetime), 'amended' takes
+            precedence.
+          example: final
+          nullable: true
+        code:
+          $ref: '#/components/schemas/Code'
+          nullable: true
+        recorded_at:
+          type: string
+          description: Date and time the observation was recorded (ISO 8601).
+          example: '2022-06-15T10:30:00Z'
+          nullable: true
+        performers:
+          type: array
+          description: List of display names or references of the performers.
+          items:
+            type: string
+        value:
+          $ref: '#/components/schemas/ObservationValue'
+          nullable: true
+
+    Procedure:
+      type: object
+      description: A clinical procedure performed for a patient.
+      required:
+        - id
+      properties:
+        id:
+          type: string
+          description: Unique procedure resource identifier.
+          example: proc-001
+        status:
+          type: string
+          description: >
+            Status of the procedure (e.g. completed, in-progress, not-done).
+          example: completed
+          nullable: true
+        code:
+          $ref: '#/components/schemas/Code'
+          nullable: true
+        performed_at:
+          type: string
+          description: Date or datetime the procedure was performed (ISO 8601).
+          example: '2020-09-22'
+          nullable: true
+        performers:
+          type: array
+          description: List of display names or references of the performers.
+          items:
+            type: string
+
+    DocumentSummary:
+      type: object
+      description: >
+        Metadata for a patient document. Does not include binary content.
+        Use GET /patients/{id}/documents/{doc_id} to retrieve the full content.
+        Use GET /binaries/{binary_id} to fetch the backing binary directly.
+      required:
+        - id
+        - status
+        - date
+      properties:
+        id:
+          type: string
+          description: Unique document resource identifier (DocumentReference ID).
+          example: doc-001
+        status:
+          type: string
+          description: >
+            Status of the document reference (e.g. current, superseded,
+            entered-in-error).
+          example: current
+        date:
+          type: string
+          description: Date and time the document was created (ISO 8601).
+          example: '2021-11-05T14:00:00Z'
+        author:
+          type: array
+          description: List of author references for this document.
+          items:
+            type: string
+        content_type:
+          type: string
+          description: MIME type of the document content (from the attachment or binary).
+          example: text/plain
+          nullable: true
+        binary_id:
+          type: string
+          description: >
+            ID of the backing Binary resource. Use GET /binaries/{binary_id} to
+            fetch the raw content.
+          example: binary-001
+          nullable: true
+
+    TimelineEntry:
+      type: object
+      description: A single entry in a patient's unified timeline.
+      required:
+        - resource_type
+        - resource
+      properties:
+        resource_type:
+          type: string
+          description: The FHIR resource type of this timeline entry.
+          example: Observation
+        date:
+          type: string
+          description: >
+            Date or datetime of the event (ISO 8601 date or datetime string).
+            May be null if the underlying resource has no date.
+          example: '2022-06-15T10:30:00Z'
+          nullable: true
+        resource:
+          type: object
+          description: >
+            The full serialized resource payload for this entry. Shape varies
+            by resource_type: Condition, Medication (MedicationRequest),
+            Observation, Procedure, or DocumentSummary (DocumentReference).
+          additionalProperties: true
+
+    PatientTimeline:
+      type: object
+      description: >
+        A unified chronological timeline of all clinical events for a patient,
+        sorted newest-first.
+      required:
+        - patient
+        - timeline
+      properties:
+        patient:
+          $ref: '#/components/schemas/PatientSummary'
+        timeline:
+          type: array
+          description: >
+            List of timeline entries across all resource types, sorted
+            newest-first.
+          items:
+            $ref: '#/components/schemas/TimelineEntry'
+
+    Binary:
+      type: object
+      description: >
+        Metadata for a FHIR Binary resource. The actual binary content is
+        available via GET /binaries/{binary_id}.
+      required:
+        - id
+      properties:
+        id:
+          type: string
+          description: Unique binary resource identifier.
+          example: binary-001
+        content_type:
+          type: string
+          description: MIME type of the binary content.
+          example: text/plain
+          nullable: true
+
+    DataQualityIssue:
+      type: object
+      description: >
+        A data quality issue detected in the FHIR data. The issue_type field
+        identifies the category; additional fields are present depending on the
+        issue type. Known issue types include: ParseError, MissingRequiredField,
+        UnresolvableReference, IndeterminateStatus, CaseMismatchReference,
+        DuplicateResource, AmendedResource, InvalidField,
+        NonStandardResourceType.
+      required:
+        - issue_type
+        - resource_type
+        - message
+      properties:
+        issue_type:
+          type: string
+          description: >
+            Category of the data quality issue. Not exhaustively enumerated —
+            new variants may be added as the auditor evolves.
+          example: MissingRequiredField
+        resource_type:
+          type: string
+          description: The FHIR resource type where the issue was found.
+          example: Patient
+        resource_id:
+          type: string
+          description: The ID of the specific resource with the issue (if applicable).
+          example: patrick-ball
+          nullable: true
+        field:
+          type: string
+          description: The specific field involved in the issue (if applicable).
+          example: birth_date
+          nullable: true
+        message:
+          type: string
+          description: Human-readable description of the data quality issue.
+          example: Patient is missing required field 'birth_date'
+      additionalProperties: true
+
+    Error:
+      type: object
+      description: A generic error response.
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Human-readable error message.
+          example: Not found
+
+tags:
+  - name: Patients
+    description: Patient demographic and summary operations.
+  - name: Conditions
+    description: Patient condition (diagnosis) records.
+  - name: Medications
+    description: Patient medication request records.
+  - name: Observations
+    description: Patient observation records (vitals, labs).
+  - name: Procedures
+    description: Patient procedure records.
+  - name: Documents
+    description: >
+      Patient clinical document listing and binary content retrieval.
+  - name: Timeline
+    description: Unified chronological patient timeline across all resource types.
+  - name: Binary
+    description: Raw FHIR Binary resource listing and content retrieval.
+  - name: Data Quality
+    description: Data quality analysis and issue reporting for the FHIR dataset.

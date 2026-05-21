@@ -1,0 +1,1884 @@
+{
+  "info": {
+    "_postman_id": "933a9332-4b78-4813-9148-a30bbf9266f6",
+    "name": "Novellia-takehome API",
+    "description": "A FHIR-backed REST API for patient health records. Serves data from an in-memory store loaded from a FHIR JSONL data file. No authentication required.\n",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "3615208"
+  },
+  "item": [
+    {
+      "name": "patients",
+      "item": [
+        {
+          "name": "{id}",
+          "item": [
+            {
+              "name": "conditions",
+              "item": [
+                {
+                  "name": "{condition_id}",
+                  "item": [
+                    {
+                      "name": "/patients/:id/conditions/:condition_id",
+                      "request": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/patients/:id/conditions/:condition_id",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "patients",
+                            ":id",
+                            "conditions",
+                            ":condition_id"
+                          ],
+                          "variable": [
+                            {
+                              "key": "id",
+                              "value": "noah-wyle",
+                              "description": "Patient ID (e.g. noah-wyle, tracy-ifeachor, patrick-ball, katherine-lanasa, supriya-ganesh, fiona-dourif, taylor-dearden, isa-briones, gerran-howell, shabana-azeez, sepideh-moafi, ayesha-harris, shawn-hatosy, jalen-thomas-brooks, kristin-villanueva, brandon-mendez-homer). Case-insensitive.\n"
+                            },
+                            {
+                              "key": "condition_id",
+                              "value": "cond-001",
+                              "description": "The condition resource ID."
+                            }
+                          ]
+                        },
+                        "description": "Returns a single condition resource for the given patient."
+                      },
+                      "response": [
+                        {
+                          "name": "A single condition resource.",
+                          "originalRequest": {
+                            "method": "GET",
+                            "header": [
+                              {
+                                "key": "Accept",
+                                "value": "application/json"
+                              }
+                            ],
+                            "url": {
+                              "raw": "{{baseUrl}}/patients/:id/conditions/:condition_id",
+                              "host": [
+                                "{{baseUrl}}"
+                              ],
+                              "path": [
+                                "patients",
+                                ":id",
+                                "conditions",
+                                ":condition_id"
+                              ],
+                              "variable": [
+                                {
+                                  "key": "id",
+                                  "value": "noah-wyle",
+                                  "description": "Patient ID (e.g. noah-wyle, tracy-ifeachor, patrick-ball, katherine-lanasa, supriya-ganesh, fiona-dourif, taylor-dearden, isa-briones, gerran-howell, shabana-azeez, sepideh-moafi, ayesha-harris, shawn-hatosy, jalen-thomas-brooks, kristin-villanueva, brandon-mendez-homer). Case-insensitive.\n"
+                                },
+                                {
+                                  "key": "condition_id",
+                                  "value": "cond-001",
+                                  "description": "The condition resource ID."
+                                }
+                              ]
+                            }
+                          },
+                          "status": "OK",
+                          "code": 200,
+                          "_postman_previewlanguage": "json",
+                          "header": [
+                            {
+                              "key": "Content-Type",
+                              "value": "application/json"
+                            }
+                          ],
+                          "cookie": [],
+                          "body": "{\n  \"id\": \"cond-001\",\n  \"code\": {\n    \"system\": \"http://snomed.info/sct\",\n    \"code\": \"44054006\",\n    \"display\": \"Diabetes mellitus type 2\"\n  },\n  \"clinical_status\": \"active\",\n  \"verification_status\": \"confirmed\",\n  \"onset\": \"2015-03-10\",\n  \"abatement\": \"2016-04-01\",\n  \"recorder\": \"Dr. Jane Smith\"\n}"
+                        },
+                        {
+                          "name": "The requested resource was not found.",
+                          "originalRequest": {
+                            "method": "GET",
+                            "header": [
+                              {
+                                "key": "Accept",
+                                "value": "application/json"
+                              }
+                            ],
+                            "url": {
+                              "raw": "{{baseUrl}}/patients/:id/conditions/:condition_id",
+                              "host": [
+                                "{{baseUrl}}"
+                              ],
+                              "path": [
+                                "patients",
+                                ":id",
+                                "conditions",
+                                ":condition_id"
+                              ],
+                              "variable": [
+                                {
+                                  "key": "id",
+                                  "value": "noah-wyle",
+                                  "description": "Patient ID (e.g. noah-wyle, tracy-ifeachor, patrick-ball, katherine-lanasa, supriya-ganesh, fiona-dourif, taylor-dearden, isa-briones, gerran-howell, shabana-azeez, sepideh-moafi, ayesha-harris, shawn-hatosy, jalen-thomas-brooks, kristin-villanueva, brandon-mendez-homer). Case-insensitive.\n"
+                                },
+                                {
+                                  "key": "condition_id",
+                                  "value": "cond-001",
+                                  "description": "The condition resource ID."
+                                }
+                              ]
+                            }
+                          },
+                          "status": "Not Found",
+                          "code": 404,
+                          "_postman_previewlanguage": "json",
+                          "header": [
+                            {
+                              "key": "Content-Type",
+                              "value": "application/json"
+                            }
+                          ],
+                          "cookie": [],
+                          "body": "{\n  \"error\": \"Not found\"\n}"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "/patients/:id/conditions",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/patients/:id/conditions",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "patients",
+                        ":id",
+                        "conditions"
+                      ],
+                      "variable": [
+                        {
+                          "key": "id",
+                          "value": "noah-wyle",
+                          "description": "Patient ID (e.g. noah-wyle, tracy-ifeachor, patrick-ball, katherine-lanasa, supriya-ganesh, fiona-dourif, taylor-dearden, isa-briones, gerran-howell, shabana-azeez, sepideh-moafi, ayesha-harris, shawn-hatosy, jalen-thomas-brooks, kristin-villanueva, brandon-mendez-homer). Case-insensitive.\n"
+                        }
+                      ]
+                    },
+                    "description": "Returns all conditions (diagnoses) for the given patient."
+                  },
+                  "response": [
+                    {
+                      "name": "A list of conditions for the patient.",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/patients/:id/conditions",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "patients",
+                            ":id",
+                            "conditions"
+                          ],
+                          "variable": [
+                            {
+                              "key": "id",
+                              "value": "noah-wyle",
+                              "description": "Patient ID (e.g. noah-wyle, tracy-ifeachor, patrick-ball, katherine-lanasa, supriya-ganesh, fiona-dourif, taylor-dearden, isa-briones, gerran-howell, shabana-azeez, sepideh-moafi, ayesha-harris, shawn-hatosy, jalen-thomas-brooks, kristin-villanueva, brandon-mendez-homer). Case-insensitive.\n"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "OK",
+                      "code": 200,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "body": "[\n  {\n    \"id\": \"cond-001\",\n    \"code\": {\n      \"system\": \"http://snomed.info/sct\",\n      \"code\": \"44054006\",\n      \"display\": \"Diabetes mellitus type 2\"\n    },\n    \"clinical_status\": \"active\",\n    \"verification_status\": \"confirmed\",\n    \"onset\": \"2015-03-10\",\n    \"abatement\": \"2016-04-01\",\n    \"recorder\": \"Dr. Jane Smith\"\n  },\n  {\n    \"id\": \"cond-001\",\n    \"code\": {\n      \"system\": \"http://snomed.info/sct\",\n      \"code\": \"44054006\",\n      \"display\": \"Diabetes mellitus type 2\"\n    },\n    \"clinical_status\": \"active\",\n    \"verification_status\": \"confirmed\",\n    \"onset\": \"2015-03-10\",\n    \"abatement\": \"2016-04-01\",\n    \"recorder\": \"Dr. Jane Smith\"\n  }\n]"
+                    },
+                    {
+                      "name": "The requested resource was not found.",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/patients/:id/conditions",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "patients",
+                            ":id",
+                            "conditions"
+                          ],
+                          "variable": [
+                            {
+                              "key": "id",
+                              "value": "noah-wyle",
+                              "description": "Patient ID (e.g. noah-wyle, tracy-ifeachor, patrick-ball, katherine-lanasa, supriya-ganesh, fiona-dourif, taylor-dearden, isa-briones, gerran-howell, shabana-azeez, sepideh-moafi, ayesha-harris, shawn-hatosy, jalen-thomas-brooks, kristin-villanueva, brandon-mendez-homer). Case-insensitive.\n"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "Not Found",
+                      "code": 404,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "body": "{\n  \"error\": \"Not found\"\n}"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "medications",
+              "item": [
+                {
+                  "name": "{medication_id}",
+                  "item": [
+                    {
+                      "name": "/patients/:id/medications/:medication_id",
+                      "request": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/patients/:id/medications/:medication_id",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "patients",
+                            ":id",
+                            "medications",
+                            ":medication_id"
+                          ],
+                          "variable": [
+                            {
+                              "key": "id",
+                              "value": "noah-wyle",
+                              "description": "Patient ID (e.g. noah-wyle, tracy-ifeachor, patrick-ball, katherine-lanasa, supriya-ganesh, fiona-dourif, taylor-dearden, isa-briones, gerran-howell, shabana-azeez, sepideh-moafi, ayesha-harris, shawn-hatosy, jalen-thomas-brooks, kristin-villanueva, brandon-mendez-homer). Case-insensitive.\n"
+                            },
+                            {
+                              "key": "medication_id",
+                              "value": "med-001",
+                              "description": "The medication request resource ID."
+                            }
+                          ]
+                        },
+                        "description": "Returns a single medication request resource for the given patient."
+                      },
+                      "response": [
+                        {
+                          "name": "A single medication request resource.",
+                          "originalRequest": {
+                            "method": "GET",
+                            "header": [
+                              {
+                                "key": "Accept",
+                                "value": "application/json"
+                              }
+                            ],
+                            "url": {
+                              "raw": "{{baseUrl}}/patients/:id/medications/:medication_id",
+                              "host": [
+                                "{{baseUrl}}"
+                              ],
+                              "path": [
+                                "patients",
+                                ":id",
+                                "medications",
+                                ":medication_id"
+                              ],
+                              "variable": [
+                                {
+                                  "key": "id",
+                                  "value": "noah-wyle",
+                                  "description": "Patient ID (e.g. noah-wyle, tracy-ifeachor, patrick-ball, katherine-lanasa, supriya-ganesh, fiona-dourif, taylor-dearden, isa-briones, gerran-howell, shabana-azeez, sepideh-moafi, ayesha-harris, shawn-hatosy, jalen-thomas-brooks, kristin-villanueva, brandon-mendez-homer). Case-insensitive.\n"
+                                },
+                                {
+                                  "key": "medication_id",
+                                  "value": "med-001",
+                                  "description": "The medication request resource ID."
+                                }
+                              ]
+                            }
+                          },
+                          "status": "OK",
+                          "code": 200,
+                          "_postman_previewlanguage": "json",
+                          "header": [
+                            {
+                              "key": "Content-Type",
+                              "value": "application/json"
+                            }
+                          ],
+                          "cookie": [],
+                          "body": "{\n  \"id\": \"med-001\",\n  \"status\": \"active\",\n  \"intent\": \"order\",\n  \"medication\": {\n    \"system\": \"http://snomed.info/sct\",\n    \"code\": \"44054006\",\n    \"display\": \"Diabetes mellitus type 2\"\n  },\n  \"prescribed_at\": \"2015-04-01\",\n  \"requester\": \"Dr. Jane Smith\",\n  \"dosage\": [\n    {\n      \"text\": \"Take 1 tablet twice daily with food\",\n      \"frequency\": 2,\n      \"period\": 1,\n      \"period_unit\": \"d\"\n    },\n    {\n      \"text\": \"Take 1 tablet twice daily with food\",\n      \"frequency\": 2,\n      \"period\": 1,\n      \"period_unit\": \"d\"\n    }\n  ]\n}"
+                        },
+                        {
+                          "name": "The requested resource was not found.",
+                          "originalRequest": {
+                            "method": "GET",
+                            "header": [
+                              {
+                                "key": "Accept",
+                                "value": "application/json"
+                              }
+                            ],
+                            "url": {
+                              "raw": "{{baseUrl}}/patients/:id/medications/:medication_id",
+                              "host": [
+                                "{{baseUrl}}"
+                              ],
+                              "path": [
+                                "patients",
+                                ":id",
+                                "medications",
+                                ":medication_id"
+                              ],
+                              "variable": [
+                                {
+                                  "key": "id",
+                                  "value": "noah-wyle",
+                                  "description": "Patient ID (e.g. noah-wyle, tracy-ifeachor, patrick-ball, katherine-lanasa, supriya-ganesh, fiona-dourif, taylor-dearden, isa-briones, gerran-howell, shabana-azeez, sepideh-moafi, ayesha-harris, shawn-hatosy, jalen-thomas-brooks, kristin-villanueva, brandon-mendez-homer). Case-insensitive.\n"
+                                },
+                                {
+                                  "key": "medication_id",
+                                  "value": "med-001",
+                                  "description": "The medication request resource ID."
+                                }
+                              ]
+                            }
+                          },
+                          "status": "Not Found",
+                          "code": 404,
+                          "_postman_previewlanguage": "json",
+                          "header": [
+                            {
+                              "key": "Content-Type",
+                              "value": "application/json"
+                            }
+                          ],
+                          "cookie": [],
+                          "body": "{\n  \"error\": \"Not found\"\n}"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "/patients/:id/medications",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/patients/:id/medications",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "patients",
+                        ":id",
+                        "medications"
+                      ],
+                      "variable": [
+                        {
+                          "key": "id",
+                          "value": "noah-wyle",
+                          "description": "Patient ID (e.g. noah-wyle, tracy-ifeachor, patrick-ball, katherine-lanasa, supriya-ganesh, fiona-dourif, taylor-dearden, isa-briones, gerran-howell, shabana-azeez, sepideh-moafi, ayesha-harris, shawn-hatosy, jalen-thomas-brooks, kristin-villanueva, brandon-mendez-homer). Case-insensitive.\n"
+                        }
+                      ]
+                    },
+                    "description": "Returns all medication requests for the given patient."
+                  },
+                  "response": [
+                    {
+                      "name": "A list of medication requests for the patient.",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/patients/:id/medications",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "patients",
+                            ":id",
+                            "medications"
+                          ],
+                          "variable": [
+                            {
+                              "key": "id",
+                              "value": "noah-wyle",
+                              "description": "Patient ID (e.g. noah-wyle, tracy-ifeachor, patrick-ball, katherine-lanasa, supriya-ganesh, fiona-dourif, taylor-dearden, isa-briones, gerran-howell, shabana-azeez, sepideh-moafi, ayesha-harris, shawn-hatosy, jalen-thomas-brooks, kristin-villanueva, brandon-mendez-homer). Case-insensitive.\n"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "OK",
+                      "code": 200,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "body": "[\n  {\n    \"id\": \"med-001\",\n    \"status\": \"active\",\n    \"intent\": \"order\",\n    \"medication\": {\n      \"system\": \"http://snomed.info/sct\",\n      \"code\": \"44054006\",\n      \"display\": \"Diabetes mellitus type 2\"\n    },\n    \"prescribed_at\": \"2015-04-01\",\n    \"requester\": \"Dr. Jane Smith\",\n    \"dosage\": [\n      {\n        \"text\": \"Take 1 tablet twice daily with food\",\n        \"frequency\": 2,\n        \"period\": 1,\n        \"period_unit\": \"d\"\n      },\n      {\n        \"text\": \"Take 1 tablet twice daily with food\",\n        \"frequency\": 2,\n        \"period\": 1,\n        \"period_unit\": \"d\"\n      }\n    ]\n  },\n  {\n    \"id\": \"med-001\",\n    \"status\": \"active\",\n    \"intent\": \"order\",\n    \"medication\": {\n      \"system\": \"http://snomed.info/sct\",\n      \"code\": \"44054006\",\n      \"display\": \"Diabetes mellitus type 2\"\n    },\n    \"prescribed_at\": \"2015-04-01\",\n    \"requester\": \"Dr. Jane Smith\",\n    \"dosage\": [\n      {\n        \"text\": \"Take 1 tablet twice daily with food\",\n        \"frequency\": 2,\n        \"period\": 1,\n        \"period_unit\": \"d\"\n      },\n      {\n        \"text\": \"Take 1 tablet twice daily with food\",\n        \"frequency\": 2,\n        \"period\": 1,\n        \"period_unit\": \"d\"\n      }\n    ]\n  }\n]"
+                    },
+                    {
+                      "name": "The requested resource was not found.",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/patients/:id/medications",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "patients",
+                            ":id",
+                            "medications"
+                          ],
+                          "variable": [
+                            {
+                              "key": "id",
+                              "value": "noah-wyle",
+                              "description": "Patient ID (e.g. noah-wyle, tracy-ifeachor, patrick-ball, katherine-lanasa, supriya-ganesh, fiona-dourif, taylor-dearden, isa-briones, gerran-howell, shabana-azeez, sepideh-moafi, ayesha-harris, shawn-hatosy, jalen-thomas-brooks, kristin-villanueva, brandon-mendez-homer). Case-insensitive.\n"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "Not Found",
+                      "code": 404,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "body": "{\n  \"error\": \"Not found\"\n}"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "observations",
+              "item": [
+                {
+                  "name": "{observation_id}",
+                  "item": [
+                    {
+                      "name": "/patients/:id/observations/:observation_id",
+                      "request": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/patients/:id/observations/:observation_id",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "patients",
+                            ":id",
+                            "observations",
+                            ":observation_id"
+                          ],
+                          "variable": [
+                            {
+                              "key": "id",
+                              "value": "noah-wyle",
+                              "description": "Patient ID (e.g. noah-wyle, tracy-ifeachor, patrick-ball, katherine-lanasa, supriya-ganesh, fiona-dourif, taylor-dearden, isa-briones, gerran-howell, shabana-azeez, sepideh-moafi, ayesha-harris, shawn-hatosy, jalen-thomas-brooks, kristin-villanueva, brandon-mendez-homer). Case-insensitive.\n"
+                            },
+                            {
+                              "key": "observation_id",
+                              "value": "obs-001",
+                              "description": "The observation resource ID."
+                            }
+                          ]
+                        },
+                        "description": "Returns a single observation resource for the given patient."
+                      },
+                      "response": [
+                        {
+                          "name": "A single observation resource.",
+                          "originalRequest": {
+                            "method": "GET",
+                            "header": [
+                              {
+                                "key": "Accept",
+                                "value": "application/json"
+                              }
+                            ],
+                            "url": {
+                              "raw": "{{baseUrl}}/patients/:id/observations/:observation_id",
+                              "host": [
+                                "{{baseUrl}}"
+                              ],
+                              "path": [
+                                "patients",
+                                ":id",
+                                "observations",
+                                ":observation_id"
+                              ],
+                              "variable": [
+                                {
+                                  "key": "id",
+                                  "value": "noah-wyle",
+                                  "description": "Patient ID (e.g. noah-wyle, tracy-ifeachor, patrick-ball, katherine-lanasa, supriya-ganesh, fiona-dourif, taylor-dearden, isa-briones, gerran-howell, shabana-azeez, sepideh-moafi, ayesha-harris, shawn-hatosy, jalen-thomas-brooks, kristin-villanueva, brandon-mendez-homer). Case-insensitive.\n"
+                                },
+                                {
+                                  "key": "observation_id",
+                                  "value": "obs-001",
+                                  "description": "The observation resource ID."
+                                }
+                              ]
+                            }
+                          },
+                          "status": "OK",
+                          "code": 200,
+                          "_postman_previewlanguage": "json",
+                          "header": [
+                            {
+                              "key": "Content-Type",
+                              "value": "application/json"
+                            }
+                          ],
+                          "cookie": [],
+                          "body": "{\n  \"id\": \"obs-001\",\n  \"status\": \"final\",\n  \"code\": {\n    \"system\": \"http://snomed.info/sct\",\n    \"code\": \"44054006\",\n    \"display\": \"Diabetes mellitus type 2\"\n  },\n  \"recorded_at\": \"2022-06-15T10:30:00Z\",\n  \"performers\": [\n    \"string\",\n    \"string\"\n  ],\n  \"value\": {\n    \"type\": \"quantity\",\n    \"value\": 175.3,\n    \"unit\": \"cm\"\n  }\n}"
+                        },
+                        {
+                          "name": "The requested resource was not found.",
+                          "originalRequest": {
+                            "method": "GET",
+                            "header": [
+                              {
+                                "key": "Accept",
+                                "value": "application/json"
+                              }
+                            ],
+                            "url": {
+                              "raw": "{{baseUrl}}/patients/:id/observations/:observation_id",
+                              "host": [
+                                "{{baseUrl}}"
+                              ],
+                              "path": [
+                                "patients",
+                                ":id",
+                                "observations",
+                                ":observation_id"
+                              ],
+                              "variable": [
+                                {
+                                  "key": "id",
+                                  "value": "noah-wyle",
+                                  "description": "Patient ID (e.g. noah-wyle, tracy-ifeachor, patrick-ball, katherine-lanasa, supriya-ganesh, fiona-dourif, taylor-dearden, isa-briones, gerran-howell, shabana-azeez, sepideh-moafi, ayesha-harris, shawn-hatosy, jalen-thomas-brooks, kristin-villanueva, brandon-mendez-homer). Case-insensitive.\n"
+                                },
+                                {
+                                  "key": "observation_id",
+                                  "value": "obs-001",
+                                  "description": "The observation resource ID."
+                                }
+                              ]
+                            }
+                          },
+                          "status": "Not Found",
+                          "code": 404,
+                          "_postman_previewlanguage": "json",
+                          "header": [
+                            {
+                              "key": "Content-Type",
+                              "value": "application/json"
+                            }
+                          ],
+                          "cookie": [],
+                          "body": "{\n  \"error\": \"Not found\"\n}"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "/patients/:id/observations",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/patients/:id/observations",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "patients",
+                        ":id",
+                        "observations"
+                      ],
+                      "variable": [
+                        {
+                          "key": "id",
+                          "value": "noah-wyle",
+                          "description": "Patient ID (e.g. noah-wyle, tracy-ifeachor, patrick-ball, katherine-lanasa, supriya-ganesh, fiona-dourif, taylor-dearden, isa-briones, gerran-howell, shabana-azeez, sepideh-moafi, ayesha-harris, shawn-hatosy, jalen-thomas-brooks, kristin-villanueva, brandon-mendez-homer). Case-insensitive.\n"
+                        }
+                      ]
+                    },
+                    "description": "Returns all observations (vitals, labs) for the given patient. Duplicate observations (same code + datetime) are deduplicated, with 'amended' status taking precedence.\n"
+                  },
+                  "response": [
+                    {
+                      "name": "A list of observations for the patient.",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/patients/:id/observations",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "patients",
+                            ":id",
+                            "observations"
+                          ],
+                          "variable": [
+                            {
+                              "key": "id",
+                              "value": "noah-wyle",
+                              "description": "Patient ID (e.g. noah-wyle, tracy-ifeachor, patrick-ball, katherine-lanasa, supriya-ganesh, fiona-dourif, taylor-dearden, isa-briones, gerran-howell, shabana-azeez, sepideh-moafi, ayesha-harris, shawn-hatosy, jalen-thomas-brooks, kristin-villanueva, brandon-mendez-homer). Case-insensitive.\n"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "OK",
+                      "code": 200,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "body": "[\n  {\n    \"id\": \"obs-001\",\n    \"status\": \"final\",\n    \"code\": {\n      \"system\": \"http://snomed.info/sct\",\n      \"code\": \"44054006\",\n      \"display\": \"Diabetes mellitus type 2\"\n    },\n    \"recorded_at\": \"2022-06-15T10:30:00Z\",\n    \"performers\": [\n      \"string\",\n      \"string\"\n    ],\n    \"value\": {\n      \"type\": \"quantity\",\n      \"value\": 175.3,\n      \"unit\": \"cm\"\n    }\n  },\n  {\n    \"id\": \"obs-001\",\n    \"status\": \"final\",\n    \"code\": {\n      \"system\": \"http://snomed.info/sct\",\n      \"code\": \"44054006\",\n      \"display\": \"Diabetes mellitus type 2\"\n    },\n    \"recorded_at\": \"2022-06-15T10:30:00Z\",\n    \"performers\": [\n      \"string\",\n      \"string\"\n    ],\n    \"value\": {\n      \"type\": \"quantity\",\n      \"value\": 175.3,\n      \"unit\": \"cm\"\n    }\n  }\n]"
+                    },
+                    {
+                      "name": "The requested resource was not found.",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/patients/:id/observations",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "patients",
+                            ":id",
+                            "observations"
+                          ],
+                          "variable": [
+                            {
+                              "key": "id",
+                              "value": "noah-wyle",
+                              "description": "Patient ID (e.g. noah-wyle, tracy-ifeachor, patrick-ball, katherine-lanasa, supriya-ganesh, fiona-dourif, taylor-dearden, isa-briones, gerran-howell, shabana-azeez, sepideh-moafi, ayesha-harris, shawn-hatosy, jalen-thomas-brooks, kristin-villanueva, brandon-mendez-homer). Case-insensitive.\n"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "Not Found",
+                      "code": 404,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "body": "{\n  \"error\": \"Not found\"\n}"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "procedures",
+              "item": [
+                {
+                  "name": "{procedure_id}",
+                  "item": [
+                    {
+                      "name": "/patients/:id/procedures/:procedure_id",
+                      "request": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/patients/:id/procedures/:procedure_id",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "patients",
+                            ":id",
+                            "procedures",
+                            ":procedure_id"
+                          ],
+                          "variable": [
+                            {
+                              "key": "id",
+                              "value": "noah-wyle",
+                              "description": "Patient ID (e.g. noah-wyle, tracy-ifeachor, patrick-ball, katherine-lanasa, supriya-ganesh, fiona-dourif, taylor-dearden, isa-briones, gerran-howell, shabana-azeez, sepideh-moafi, ayesha-harris, shawn-hatosy, jalen-thomas-brooks, kristin-villanueva, brandon-mendez-homer). Case-insensitive.\n"
+                            },
+                            {
+                              "key": "procedure_id",
+                              "value": "proc-001",
+                              "description": "The procedure resource ID."
+                            }
+                          ]
+                        },
+                        "description": "Returns a single procedure resource for the given patient."
+                      },
+                      "response": [
+                        {
+                          "name": "A single procedure resource.",
+                          "originalRequest": {
+                            "method": "GET",
+                            "header": [
+                              {
+                                "key": "Accept",
+                                "value": "application/json"
+                              }
+                            ],
+                            "url": {
+                              "raw": "{{baseUrl}}/patients/:id/procedures/:procedure_id",
+                              "host": [
+                                "{{baseUrl}}"
+                              ],
+                              "path": [
+                                "patients",
+                                ":id",
+                                "procedures",
+                                ":procedure_id"
+                              ],
+                              "variable": [
+                                {
+                                  "key": "id",
+                                  "value": "noah-wyle",
+                                  "description": "Patient ID (e.g. noah-wyle, tracy-ifeachor, patrick-ball, katherine-lanasa, supriya-ganesh, fiona-dourif, taylor-dearden, isa-briones, gerran-howell, shabana-azeez, sepideh-moafi, ayesha-harris, shawn-hatosy, jalen-thomas-brooks, kristin-villanueva, brandon-mendez-homer). Case-insensitive.\n"
+                                },
+                                {
+                                  "key": "procedure_id",
+                                  "value": "proc-001",
+                                  "description": "The procedure resource ID."
+                                }
+                              ]
+                            }
+                          },
+                          "status": "OK",
+                          "code": 200,
+                          "_postman_previewlanguage": "json",
+                          "header": [
+                            {
+                              "key": "Content-Type",
+                              "value": "application/json"
+                            }
+                          ],
+                          "cookie": [],
+                          "body": "{\n  \"id\": \"proc-001\",\n  \"status\": \"completed\",\n  \"code\": {\n    \"system\": \"http://snomed.info/sct\",\n    \"code\": \"44054006\",\n    \"display\": \"Diabetes mellitus type 2\"\n  },\n  \"performed_at\": \"2020-09-22\",\n  \"performers\": [\n    \"string\",\n    \"string\"\n  ]\n}"
+                        },
+                        {
+                          "name": "The requested resource was not found.",
+                          "originalRequest": {
+                            "method": "GET",
+                            "header": [
+                              {
+                                "key": "Accept",
+                                "value": "application/json"
+                              }
+                            ],
+                            "url": {
+                              "raw": "{{baseUrl}}/patients/:id/procedures/:procedure_id",
+                              "host": [
+                                "{{baseUrl}}"
+                              ],
+                              "path": [
+                                "patients",
+                                ":id",
+                                "procedures",
+                                ":procedure_id"
+                              ],
+                              "variable": [
+                                {
+                                  "key": "id",
+                                  "value": "noah-wyle",
+                                  "description": "Patient ID (e.g. noah-wyle, tracy-ifeachor, patrick-ball, katherine-lanasa, supriya-ganesh, fiona-dourif, taylor-dearden, isa-briones, gerran-howell, shabana-azeez, sepideh-moafi, ayesha-harris, shawn-hatosy, jalen-thomas-brooks, kristin-villanueva, brandon-mendez-homer). Case-insensitive.\n"
+                                },
+                                {
+                                  "key": "procedure_id",
+                                  "value": "proc-001",
+                                  "description": "The procedure resource ID."
+                                }
+                              ]
+                            }
+                          },
+                          "status": "Not Found",
+                          "code": 404,
+                          "_postman_previewlanguage": "json",
+                          "header": [
+                            {
+                              "key": "Content-Type",
+                              "value": "application/json"
+                            }
+                          ],
+                          "cookie": [],
+                          "body": "{\n  \"error\": \"Not found\"\n}"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "/patients/:id/procedures",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/patients/:id/procedures",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "patients",
+                        ":id",
+                        "procedures"
+                      ],
+                      "variable": [
+                        {
+                          "key": "id",
+                          "value": "noah-wyle",
+                          "description": "Patient ID (e.g. noah-wyle, tracy-ifeachor, patrick-ball, katherine-lanasa, supriya-ganesh, fiona-dourif, taylor-dearden, isa-briones, gerran-howell, shabana-azeez, sepideh-moafi, ayesha-harris, shawn-hatosy, jalen-thomas-brooks, kristin-villanueva, brandon-mendez-homer). Case-insensitive.\n"
+                        }
+                      ]
+                    },
+                    "description": "Returns all procedures performed for the given patient."
+                  },
+                  "response": [
+                    {
+                      "name": "A list of procedures for the patient.",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/patients/:id/procedures",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "patients",
+                            ":id",
+                            "procedures"
+                          ],
+                          "variable": [
+                            {
+                              "key": "id",
+                              "value": "noah-wyle",
+                              "description": "Patient ID (e.g. noah-wyle, tracy-ifeachor, patrick-ball, katherine-lanasa, supriya-ganesh, fiona-dourif, taylor-dearden, isa-briones, gerran-howell, shabana-azeez, sepideh-moafi, ayesha-harris, shawn-hatosy, jalen-thomas-brooks, kristin-villanueva, brandon-mendez-homer). Case-insensitive.\n"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "OK",
+                      "code": 200,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "body": "[\n  {\n    \"id\": \"proc-001\",\n    \"status\": \"completed\",\n    \"code\": {\n      \"system\": \"http://snomed.info/sct\",\n      \"code\": \"44054006\",\n      \"display\": \"Diabetes mellitus type 2\"\n    },\n    \"performed_at\": \"2020-09-22\",\n    \"performers\": [\n      \"string\",\n      \"string\"\n    ]\n  },\n  {\n    \"id\": \"proc-001\",\n    \"status\": \"completed\",\n    \"code\": {\n      \"system\": \"http://snomed.info/sct\",\n      \"code\": \"44054006\",\n      \"display\": \"Diabetes mellitus type 2\"\n    },\n    \"performed_at\": \"2020-09-22\",\n    \"performers\": [\n      \"string\",\n      \"string\"\n    ]\n  }\n]"
+                    },
+                    {
+                      "name": "The requested resource was not found.",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/patients/:id/procedures",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "patients",
+                            ":id",
+                            "procedures"
+                          ],
+                          "variable": [
+                            {
+                              "key": "id",
+                              "value": "noah-wyle",
+                              "description": "Patient ID (e.g. noah-wyle, tracy-ifeachor, patrick-ball, katherine-lanasa, supriya-ganesh, fiona-dourif, taylor-dearden, isa-briones, gerran-howell, shabana-azeez, sepideh-moafi, ayesha-harris, shawn-hatosy, jalen-thomas-brooks, kristin-villanueva, brandon-mendez-homer). Case-insensitive.\n"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "Not Found",
+                      "code": 404,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "body": "{\n  \"error\": \"Not found\"\n}"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "documents",
+              "item": [
+                {
+                  "name": "{doc_id}",
+                  "item": [
+                    {
+                      "name": "/patients/:id/documents/:doc_id",
+                      "request": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "*/*"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/patients/:id/documents/:doc_id",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "patients",
+                            ":id",
+                            "documents",
+                            ":doc_id"
+                          ],
+                          "variable": [
+                            {
+                              "key": "id",
+                              "value": "noah-wyle",
+                              "description": "Patient ID (e.g. noah-wyle, tracy-ifeachor, patrick-ball, katherine-lanasa, supriya-ganesh, fiona-dourif, taylor-dearden, isa-briones, gerran-howell, shabana-azeez, sepideh-moafi, ayesha-harris, shawn-hatosy, jalen-thomas-brooks, kristin-villanueva, brandon-mendez-homer). Case-insensitive.\n"
+                            },
+                            {
+                              "key": "doc_id",
+                              "value": "doc-001",
+                              "description": "The document resource ID."
+                            }
+                          ]
+                        },
+                        "description": "Returns the raw binary content of the specified document for the given patient. The response Content-Type header reflects the document's original MIME type (e.g. text/plain, application/pdf).\n"
+                      },
+                      "response": [
+                        {
+                          "name": "Raw binary content of the document.",
+                          "originalRequest": {
+                            "method": "GET",
+                            "header": [
+                              {
+                                "key": "Accept",
+                                "value": "*/*"
+                              }
+                            ],
+                            "url": {
+                              "raw": "{{baseUrl}}/patients/:id/documents/:doc_id",
+                              "host": [
+                                "{{baseUrl}}"
+                              ],
+                              "path": [
+                                "patients",
+                                ":id",
+                                "documents",
+                                ":doc_id"
+                              ],
+                              "variable": [
+                                {
+                                  "key": "id",
+                                  "value": "noah-wyle",
+                                  "description": "Patient ID (e.g. noah-wyle, tracy-ifeachor, patrick-ball, katherine-lanasa, supriya-ganesh, fiona-dourif, taylor-dearden, isa-briones, gerran-howell, shabana-azeez, sepideh-moafi, ayesha-harris, shawn-hatosy, jalen-thomas-brooks, kristin-villanueva, brandon-mendez-homer). Case-insensitive.\n"
+                                },
+                                {
+                                  "key": "doc_id",
+                                  "value": "doc-001",
+                                  "description": "The document resource ID."
+                                }
+                              ]
+                            }
+                          },
+                          "status": "OK",
+                          "code": 200,
+                          "_postman_previewlanguage": "text",
+                          "header": [
+                            {
+                              "key": "Content-Type",
+                              "value": "*/*"
+                            }
+                          ],
+                          "cookie": [],
+                          "body": "string"
+                        },
+                        {
+                          "name": "The requested resource was not found.",
+                          "originalRequest": {
+                            "method": "GET",
+                            "header": [
+                              {
+                                "key": "Accept",
+                                "value": "application/json"
+                              }
+                            ],
+                            "url": {
+                              "raw": "{{baseUrl}}/patients/:id/documents/:doc_id",
+                              "host": [
+                                "{{baseUrl}}"
+                              ],
+                              "path": [
+                                "patients",
+                                ":id",
+                                "documents",
+                                ":doc_id"
+                              ],
+                              "variable": [
+                                {
+                                  "key": "id",
+                                  "value": "noah-wyle",
+                                  "description": "Patient ID (e.g. noah-wyle, tracy-ifeachor, patrick-ball, katherine-lanasa, supriya-ganesh, fiona-dourif, taylor-dearden, isa-briones, gerran-howell, shabana-azeez, sepideh-moafi, ayesha-harris, shawn-hatosy, jalen-thomas-brooks, kristin-villanueva, brandon-mendez-homer). Case-insensitive.\n"
+                                },
+                                {
+                                  "key": "doc_id",
+                                  "value": "doc-001",
+                                  "description": "The document resource ID."
+                                }
+                              ]
+                            }
+                          },
+                          "status": "Not Found",
+                          "code": 404,
+                          "_postman_previewlanguage": "json",
+                          "header": [
+                            {
+                              "key": "Content-Type",
+                              "value": "application/json"
+                            }
+                          ],
+                          "cookie": [],
+                          "body": "{\n  \"error\": \"Not found\"\n}"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "/patients/:id/documents",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/patients/:id/documents",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "patients",
+                        ":id",
+                        "documents"
+                      ],
+                      "variable": [
+                        {
+                          "key": "id",
+                          "value": "noah-wyle",
+                          "description": "Patient ID (e.g. noah-wyle, tracy-ifeachor, patrick-ball, katherine-lanasa, supriya-ganesh, fiona-dourif, taylor-dearden, isa-briones, gerran-howell, shabana-azeez, sepideh-moafi, ayesha-harris, shawn-hatosy, jalen-thomas-brooks, kristin-villanueva, brandon-mendez-homer). Case-insensitive.\n"
+                        }
+                      ]
+                    },
+                    "description": "Returns a list of document summaries for the given patient, sorted by date descending. Each entry includes the document ID, status, date, authors, content type, and a reference to the backing binary resource. Use GET /patients/{id}/documents/{doc_id} to retrieve the full binary content of a specific document.\n"
+                  },
+                  "response": [
+                    {
+                      "name": "A list of document summaries for the patient.",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/patients/:id/documents",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "patients",
+                            ":id",
+                            "documents"
+                          ],
+                          "variable": [
+                            {
+                              "key": "id",
+                              "value": "noah-wyle",
+                              "description": "Patient ID (e.g. noah-wyle, tracy-ifeachor, patrick-ball, katherine-lanasa, supriya-ganesh, fiona-dourif, taylor-dearden, isa-briones, gerran-howell, shabana-azeez, sepideh-moafi, ayesha-harris, shawn-hatosy, jalen-thomas-brooks, kristin-villanueva, brandon-mendez-homer). Case-insensitive.\n"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "OK",
+                      "code": 200,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "body": "[\n  {\n    \"id\": \"doc-001\",\n    \"status\": \"current\",\n    \"date\": \"2021-11-05T14:00:00Z\",\n    \"author\": [\n      \"string\",\n      \"string\"\n    ],\n    \"content_type\": \"text/plain\",\n    \"binary_id\": \"binary-001\"\n  },\n  {\n    \"id\": \"doc-001\",\n    \"status\": \"current\",\n    \"date\": \"2021-11-05T14:00:00Z\",\n    \"author\": [\n      \"string\",\n      \"string\"\n    ],\n    \"content_type\": \"text/plain\",\n    \"binary_id\": \"binary-001\"\n  }\n]"
+                    },
+                    {
+                      "name": "The requested resource was not found.",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/patients/:id/documents",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "patients",
+                            ":id",
+                            "documents"
+                          ],
+                          "variable": [
+                            {
+                              "key": "id",
+                              "value": "noah-wyle",
+                              "description": "Patient ID (e.g. noah-wyle, tracy-ifeachor, patrick-ball, katherine-lanasa, supriya-ganesh, fiona-dourif, taylor-dearden, isa-briones, gerran-howell, shabana-azeez, sepideh-moafi, ayesha-harris, shawn-hatosy, jalen-thomas-brooks, kristin-villanueva, brandon-mendez-homer). Case-insensitive.\n"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "Not Found",
+                      "code": 404,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "body": "{\n  \"error\": \"Not found\"\n}"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "timeline",
+              "item": [
+                {
+                  "name": "/patients/:id/timeline",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/patients/:id/timeline",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "patients",
+                        ":id",
+                        "timeline"
+                      ],
+                      "variable": [
+                        {
+                          "key": "id",
+                          "value": "noah-wyle",
+                          "description": "Patient ID (e.g. noah-wyle, tracy-ifeachor, patrick-ball, katherine-lanasa, supriya-ganesh, fiona-dourif, taylor-dearden, isa-briones, gerran-howell, shabana-azeez, sepideh-moafi, ayesha-harris, shawn-hatosy, jalen-thomas-brooks, kristin-villanueva, brandon-mendez-homer). Case-insensitive.\n"
+                        }
+                      ]
+                    },
+                    "description": "Returns a unified chronological timeline of all resource types (conditions, medications, observations, procedures, documents) for the given patient, sorted newest-first. Each entry includes the resource type, date, and the full serialized resource payload.\n"
+                  },
+                  "response": [
+                    {
+                      "name": "A unified timeline of events for the patient.",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/patients/:id/timeline",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "patients",
+                            ":id",
+                            "timeline"
+                          ],
+                          "variable": [
+                            {
+                              "key": "id",
+                              "value": "noah-wyle",
+                              "description": "Patient ID (e.g. noah-wyle, tracy-ifeachor, patrick-ball, katherine-lanasa, supriya-ganesh, fiona-dourif, taylor-dearden, isa-briones, gerran-howell, shabana-azeez, sepideh-moafi, ayesha-harris, shawn-hatosy, jalen-thomas-brooks, kristin-villanueva, brandon-mendez-homer). Case-insensitive.\n"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "OK",
+                      "code": 200,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "body": "{\n  \"patient\": {\n    \"id\": \"noah-wyle\",\n    \"name\": \"Noah Wyle\",\n    \"birth_date\": \"1971-06-04\",\n    \"gender\": \"male\",\n    \"active\": true\n  },\n  \"timeline\": [\n    {\n      \"resource_type\": \"Observation\",\n      \"resource\": {\n        \"key_0\": true,\n        \"key_1\": 3137.607276611254\n      },\n      \"date\": \"2022-06-15T10:30:00Z\"\n    },\n    {\n      \"resource_type\": \"Observation\",\n      \"resource\": {\n        \"key_0\": 3023,\n        \"key_1\": 5526.957826661094,\n        \"key_2\": 9665.623496837465\n      },\n      \"date\": \"2022-06-15T10:30:00Z\"\n    }\n  ]\n}"
+                    },
+                    {
+                      "name": "The requested resource was not found.",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/patients/:id/timeline",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "patients",
+                            ":id",
+                            "timeline"
+                          ],
+                          "variable": [
+                            {
+                              "key": "id",
+                              "value": "noah-wyle",
+                              "description": "Patient ID (e.g. noah-wyle, tracy-ifeachor, patrick-ball, katherine-lanasa, supriya-ganesh, fiona-dourif, taylor-dearden, isa-briones, gerran-howell, shabana-azeez, sepideh-moafi, ayesha-harris, shawn-hatosy, jalen-thomas-brooks, kristin-villanueva, brandon-mendez-homer). Case-insensitive.\n"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "Not Found",
+                      "code": 404,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "body": "{\n  \"error\": \"Not found\"\n}"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "/patients/:id",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/patients/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "patients",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "noah-wyle",
+                      "description": "Patient ID (e.g. noah-wyle, tracy-ifeachor, patrick-ball, katherine-lanasa, supriya-ganesh, fiona-dourif, taylor-dearden, isa-briones, gerran-howell, shabana-azeez, sepideh-moafi, ayesha-harris, shawn-hatosy, jalen-thomas-brooks, kristin-villanueva, brandon-mendez-homer). Case-insensitive.\n"
+                    }
+                  ]
+                },
+                "description": "Returns full patient details for the given patient ID. Patient IDs are case-insensitive.\n"
+              },
+              "response": [
+                {
+                  "name": "Full patient details.",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/patients/:id",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "patients",
+                        ":id"
+                      ],
+                      "variable": [
+                        {
+                          "key": "id",
+                          "value": "noah-wyle",
+                          "description": "Patient ID (e.g. noah-wyle, tracy-ifeachor, patrick-ball, katherine-lanasa, supriya-ganesh, fiona-dourif, taylor-dearden, isa-briones, gerran-howell, shabana-azeez, sepideh-moafi, ayesha-harris, shawn-hatosy, jalen-thomas-brooks, kristin-villanueva, brandon-mendez-homer). Case-insensitive.\n"
+                        }
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"id\": \"noah-wyle\",\n  \"name\": \"Noah Wyle\",\n  \"birth_date\": \"1971-06-04\",\n  \"gender\": \"male\",\n  \"active\": true\n}"
+                },
+                {
+                  "name": "The requested resource was not found.",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/patients/:id",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "patients",
+                        ":id"
+                      ],
+                      "variable": [
+                        {
+                          "key": "id",
+                          "value": "noah-wyle",
+                          "description": "Patient ID (e.g. noah-wyle, tracy-ifeachor, patrick-ball, katherine-lanasa, supriya-ganesh, fiona-dourif, taylor-dearden, isa-briones, gerran-howell, shabana-azeez, sepideh-moafi, ayesha-harris, shawn-hatosy, jalen-thomas-brooks, kristin-villanueva, brandon-mendez-homer). Case-insensitive.\n"
+                        }
+                      ]
+                    }
+                  },
+                  "status": "Not Found",
+                  "code": 404,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"error\": \"Not found\"\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "/patients",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/patients",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "patients"
+              ]
+            },
+            "description": "Returns a list of all patient summaries in the system."
+          },
+          "response": [
+            {
+              "name": "A list of patient summaries.",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/patients",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "patients"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n  {\n    \"id\": \"noah-wyle\",\n    \"name\": \"Noah Wyle\",\n    \"birth_date\": \"1971-06-04\",\n    \"gender\": \"male\",\n    \"active\": true\n  }\n]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "binaries",
+      "item": [
+        {
+          "name": "{binary_id}",
+          "item": [
+            {
+              "name": "/binaries/:binary_id",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "*/*"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/binaries/:binary_id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "binaries",
+                    ":binary_id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "binary_id",
+                      "value": "binary-001",
+                      "description": "The binary resource ID."
+                    }
+                  ]
+                },
+                "description": "Returns the raw binary content for the given binary resource ID. The response Content-Type header reflects the binary's original MIME type.\n"
+              },
+              "response": [
+                {
+                  "name": "Raw binary content.",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "*/*"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/binaries/:binary_id",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "binaries",
+                        ":binary_id"
+                      ],
+                      "variable": [
+                        {
+                          "key": "binary_id",
+                          "value": "binary-001",
+                          "description": "The binary resource ID."
+                        }
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "*/*"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "string"
+                },
+                {
+                  "name": "Binary found but could not be loaded or decoded.",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/binaries/:binary_id",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "binaries",
+                        ":binary_id"
+                      ],
+                      "variable": [
+                        {
+                          "key": "binary_id",
+                          "value": "binary-001",
+                          "description": "The binary resource ID."
+                        }
+                      ]
+                    }
+                  },
+                  "status": "Bad Request",
+                  "code": 400,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"error\": \"Not found\"\n}"
+                },
+                {
+                  "name": "The requested resource was not found.",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/binaries/:binary_id",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "binaries",
+                        ":binary_id"
+                      ],
+                      "variable": [
+                        {
+                          "key": "binary_id",
+                          "value": "binary-001",
+                          "description": "The binary resource ID."
+                        }
+                      ]
+                    }
+                  },
+                  "status": "Not Found",
+                  "code": 404,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"error\": \"Not found\"\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "/binaries",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/binaries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "binaries"
+              ]
+            },
+            "description": "Returns a list of all binary resource metadata entries in the store. Binary resources back patient documents and can be fetched by ID via GET /binaries/{binary_id}.\n"
+          },
+          "response": [
+            {
+              "name": "A list of binary resource metadata entries.",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/binaries",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "binaries"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n  {\n    \"id\": \"binary-001\",\n    \"content_type\": \"text/plain\"\n  },\n  {\n    \"id\": \"binary-001\",\n    \"content_type\": \"text/plain\"\n  }\n]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "data-quality",
+      "item": [
+        {
+          "name": "/data-quality",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/data-quality",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "data-quality"
+              ]
+            },
+            "description": "Returns a report of data quality issues detected in the FHIR data, including parse errors, missing required fields, unresolvable references, indeterminate statuses, case mismatch references, duplicate resources, amended resources, invalid fields, and non-standard resource types.\n"
+          },
+          "response": [
+            {
+              "name": "A list of data quality issues found in the FHIR data.",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/data-quality",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "data-quality"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n  {\n    \"issue_type\": \"MissingRequiredField\",\n    \"resource_type\": \"Patient\",\n    \"message\": \"Patient is missing required field 'birth_date'\",\n    \"resource_id\": \"patrick-ball\",\n    \"field\": \"birth_date\"\n  },\n  {\n    \"issue_type\": \"MissingRequiredField\",\n    \"resource_type\": \"Patient\",\n    \"message\": \"Patient is missing required field 'birth_date'\",\n    \"resource_id\": \"patrick-ball\",\n    \"field\": \"birth_date\"\n  }\n]"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3100"
+    }
+  ]
+}

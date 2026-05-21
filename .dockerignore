@@ -1,0 +1,8 @@
+target
+.git
+.gitignore
+.ai
+.claude
+.junie
+.idea
+.DS_Store
