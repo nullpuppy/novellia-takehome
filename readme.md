@@ -8,21 +8,21 @@ a given patient.
 Additional points of interest, a patient timeline has been implemented
 and returns a date-ordered listing of all patient resources starting
 from the most recent. Also, an audit of parsed/loaded resources is
-done during load. Audit results are preserved in-memory and retrievable via
-its own endpoint.
+done during dataset loading. Audit results are preserved in-memory and retrievable via
+ their own endpoint.
 
 ## Tech stack
 
 - [Rust](http://www.rust-lang.org) - language/build environment
-- [Axum](https://docs.rs/axum/latest/axum/) - HTTP routing and serving resources
+- [Axum](https://docs.rs/axum/latest/axum/) – HTTP routing and serving resources
 - [Tower](https://docs.rs/tower/latest/tower/) - http middleware for tracing/logging, path normalization, and panic recovery
-- [Tokio](https://docs.rs/tokio/latest/tokio/) - async runtime
-- [Serde](https://docs.rs/serde/latest/serde)/[serde_json](https://docs.rs/serde_json/latest/serde_json/) - json serialization, deserialization
+- [Tokio](https://docs.rs/tokio/latest/tokio/) – async runtime
+- [Serde](https://docs.rs/serde/latest/serde)/[serde_json](https://docs.rs/serde_json/latest/serde_json/) - JSON serialization, deserialization
 - [Base64](https://docs.rs/base64/latest/base64) - Base64 resource decoding
 
 I chose this stack as I've been working using rust for side projects, I'm
 comfortable working with Rust and in that ecosystem. I've been using rust for
-side-projects for a couple years now, and enjoy coding with it as much as possible.
+side-projects for several years now and enjoy coding with it as much as possible.
 
 ## Running locally
 
@@ -38,7 +38,7 @@ A script (`run-docker.sh`) and a `Makefile` are both present for running via doc
 ```bash
 # Build the docker image and run the API using the default dataset
 > ./run-docker.sh
-# Or run with another datatset included in the repo
+# Or run with another dataset included in the repo
 > ./run-docker.sh data/generated-fhir-resources.jsonl
 ```
 #### `Makefile`
@@ -63,7 +63,7 @@ The API will be available at
 http://localhost:3100
 ```
 
-to run with alternative datasets, simply place in the data/ directory and start the container with the path to the dataset.
+to run with alternative datasets, place it in the data/ directory and start the container with the path to the dataset.
 
 ### With local Rust
 
@@ -136,7 +136,7 @@ for required fields, resource linking between some resources, etc.
 - missing required fields
 - invalid field formats
 - unresolvable references
-- mismatch references due to wrong case pattern
+- mismatch references due to the wrong case pattern
 - duplicate/amended observation
 - non-standard or unknown resource types
 
@@ -174,7 +174,7 @@ All parsed resources are still loaded regardless of data quality issues.
 All parsable resources are loaded into memory at startup.
 - `fhir.rs` contains FHIR-shaped input models
 - `store.rs` loads, parses, and indexes resources by normalized (lowercased) patient id and binary id
-- `audit.rs` audits resources for data quality prior to indexing
+- `audit.rs` audits resources for data quality before indexing
 - `route.rs` single source of truth for all routes
 - `api/binary.rs` contains binary route handlers
 - `api/patient/models.rs` contains API response DTOs
@@ -188,7 +188,7 @@ All request-ending errors return JSON-formatted errors.
 Invalid resources related to document loading are raised as
 Bad Request errors (status 400). Panics are recovered by middleware and
 will return Internal Service Error errors (status 500).
-Not Found errors are returned as 404s.
+Not Found errors are returned as 404's.
 
 ## Tradeoffs / Future work
 
@@ -213,18 +213,18 @@ Not Found errors are returned as 404s.
 ## AI usage
 
 ### AI Tools:
-- Jetbrains AI Assistant. Some claude chats, as well as whatever Jetbrains AI Assistant's model is
+- JetBrains AI Assistant. Some claude chats, as well as whatever JetBrains AI Assistant's model is
   - code review
   - naming/refactoring discussions
   - test coverage and documentation discussions and drafting
   - reasoning FHIR models and parsing sample data to generate a base schema
 
-Some code generation was done in chat with the above discussions, no agent/automated code generation
-usage was used, but there was one tiny usage of agent editing used where it just changed the field visibility
-in the [FHIR structs](src/fhir.rs) as I had initially written them with the wrong visibility. (All it did was 
-add pub to the beginning of each field on those structs.)
+Some code generation was done in chat with the above discussions, but there wasn't any use of agent-driven code
+generation, and only a single, small, usage of agent editing. Agent mode was used to change the field visibility
+on the [FHIR structs](src/fhir.rs) as I had initially written them with the wrong visibility. (All the agent did
+was add pub to the beginning of each field on those structs.)
 
 - Postman AI
   - Generated openapi.yaml by inspecting the code base.
     - I suppose this could be considered a second use of an agent, but not for code generation unless you
-    consider yaml to be code.
+    consider YAML to be code.
