@@ -3,7 +3,7 @@ use crate::audit::DataQualityIssue;
 use crate::{audit, fhir};
 use std::collections::HashMap;
 use std::fs;
-use tracing::error;
+use tracing::{error, warn};
 
 /// All resources associated with a single patient
 ///
@@ -133,7 +133,7 @@ impl Store {
                 }
                 fhir::FhirResource::Unknown { resource_type, id } => {
                     let kind = resource_type.as_deref().unwrap_or("<missing>");
-                    error!("unknown resource type {kind} ({id:?})");
+                    warn!("unknown resource type {kind} ({id:?})");
                 }
             }
         }

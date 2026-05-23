@@ -23,10 +23,10 @@ async fn main() -> anyhow::Result<()> {
     let data_path = std::env::args()
         .nth(1)
         .unwrap_or_else(|| DEFAULT_DATA_PATH.to_string());
-    let store = store::Store::load(data_path)?;
+    let store = store::Store::load(&data_path)?;
 
     info!(
-        "Loaded {} patients, {} data quality issues",
+        "Loaded {} patients, {} data quality issues from {data_path}",
         &store.patients.len(),
         &store.quality_issues.len()
     );

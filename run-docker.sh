@@ -17,12 +17,13 @@ if [[ ! -f "${DATASET}" ]]; then
   exit
 fi
 
-DATASET_ABS="$(cd "$(dirname "${DATASET}")" && pwd)/$(basename "${DATASET}")"
+DATASET_DIR="$(cd "$(dirname "${DATASET}")" && pwd)/$(basename "${DATASET}")"
 DATASET_NAME="$(basename "${DATASET}")"
 
 docker run --rm \
   --name "${CONTAINER_NAME}" \
   -p "${PORT}:3100" \
-  -v "${DATASET_ABS}:/data/${DATASET_NAME}:ro" \
+  -v "${DATASET_DIR}:/data/${DATASET_NAME}:ro" \
+  --name "${CONTAINER_NAME}" \
     "${IMAGE_NAME}" \
   "/data/${DATASET_NAME}"
