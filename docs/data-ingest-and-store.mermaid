@@ -1,0 +1,29 @@
+---
+title: Data ingestion & in-memory store
+---
+graph LR
+    Start --> DataStore  --> ApiRoot
+
+    Start(("App Start"))
+    ApiRoot{"Api Start"}
+
+    DataLoad("Read in dataset")
+    DataParse("fhir::FhirResource::parse_resource")
+    DataAudit("audit::audit_data_quality")
+
+    StorePatients["patients\n&ltHashMap&gt"]
+    StoreBinaries["binaries"\n&ltHashMap&gt]
+StoreQualityIssues["quality_issues\n&ltVec&gt"]
+
+DataParse -- Parse Failure --> StoreQualityIssues
+DataAudit -- Data Quality Audit Failure --> StoreQualityIssues
+
+subgraph DataIngest["store::Store::load"]
+DataLoad -- per json blob --> DataParse --> DataAudit
+end
+
+subgraph DataStore["store::Store"]
+StoreQualityIssues
+DataIngest ----> StorePatients
+DataIngest ----> StoreBinaries
+end

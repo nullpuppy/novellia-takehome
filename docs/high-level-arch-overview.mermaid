@@ -1,0 +1,19 @@
+---
+title: High-level architecture overview
+---
+graph TD
+    Start --> DataIngest --> ApiRoot
+    ApiRoot --> PatientsApi --> Patients..
+    ApiRoot --> BinariesApi --> Binaries..
+    ApiRoot --> DataQualityApi
+    DataIngest --> DataStore
+
+    Start((App Start))
+    DataIngest("Data ingestion")
+    DataStore[(In-memory\ndata store)]
+    ApiRoot{API start}
+    PatientsApi{"patients"}
+    BinariesApi{"binaries"}
+    DataQualityApi{"data-quality"}
+    Patients..{{"..."}}
+    Binaries..{{"..."}}

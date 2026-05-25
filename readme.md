@@ -182,6 +182,12 @@ All parsable resources are loaded into memory at startup.
 - `api/patient/timeline.rs` handles resource conversion and collection for the timeline
 - `api/patient.rs` contains patient route handlers
 
+[High-level overview](./docs/high-level-arch-overview.mermaid)
+
+[Data ingestion & store overview](./docs/data-ingest-and-store.mermaid)
+
+[API overview](./docs/api-overview.mermaid)
+
 ## Error handling
 
 All request-ending errors return JSON-formatted errors.

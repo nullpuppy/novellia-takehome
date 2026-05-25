@@ -1,0 +1,70 @@
+---
+title: API Overview
+---
+graph TD
+    Start(("App Start"))
+    DataLoad("Data Loader\nStore::load");
+
+    ApiRoot{"API start"}
+    ApiResponse["API Response"]
+
+    PatientList{{"/patients"}}
+    PatientGet["/patients/{id}"]
+    PatientConditions{{"/patients/{id}/conditions"}}
+    PatientConditionGet["/patients/{id}/conditions/{id}"]
+    PatientMedications{{"/patients/{id}/medications"}}
+    PatientMedicationsGet["/patients/{id}/medications/{id}"]
+    PatientObservations{{"/patients/{id}/observations"}}
+    PatientObservationGet["/patients/{id}/observations/{id}"]
+    PatientProcedures{{"/patients/{id}/procedures"}}
+    PatientProcedureGet["/patients/{id}/procedures/{id}"]
+    PatientDocuments{{"/patients/{id}/documents"}}
+    PatientDocumentGet["/patients/{id}/documents/{id}"]
+    PatientTimeline["/patients/{id}/timeline"]
+
+    BinaryList{{"/binaries"}}
+    BinaryGet["/binaries/{id}"]
+
+    Success["200 OK"]
+    NotFound["404 Not Found"]
+    BadRequest["400 Bad Request"]
+
+    Start --> DataIngestion --> ApiRoot
+    ApiRoot --> PatientsApi --> ApiResponse
+    ApiRoot --> BinariesApi --> ApiResponse
+    ApiRoot --> DataQualityApi --> ApiResponse
+
+    subgraph DataIngestion[Data ingestion and Indexing]
+        DataLoad
+    end
+
+    subgraph ApiResponse["Response"]
+        Success
+        NotFound
+        BadRequest
+    end
+
+    subgraph PatientsApi[Patients Endpoints]
+        PatientList
+        PatientGet
+        PatientGet --> PatientConditions
+        PatientGet --> PatientConditionGet
+        PatientGet --> PatientMedications
+        PatientGet --> PatientMedicationsGet
+        PatientGet --> PatientObservations
+        PatientGet --> PatientObservationGet
+        PatientGet --> PatientProcedures
+        PatientGet --> PatientProcedureGet
+        PatientGet --> PatientDocuments
+        PatientGet --> PatientDocumentGet
+        PatientGet --> PatientTimeline
+    end
+
+    subgraph BinariesApi[Binaries Endpoints]
+        BinaryList
+        BinaryGet
+    end
+
+    subgraph DataQualityApi[DataQuality Endpoints]
+        DataQualityList
+    end
