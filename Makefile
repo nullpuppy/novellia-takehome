@@ -24,7 +24,7 @@ docker-run:
 
 	@DATASET_PATH="$$(cd "$$(dirname "$(DATASET)")" && pwd)/$$(basename "$(DATASET)")"; \
 	DATASET_NAME="$$(basename "$(DATASET)")"; \
-	docker run --rm \
+	docker run --rm -d \
 	--name "$(CONTAINER_NAME)" \
 	-p $(PORT):3100 \
 	-v "$${DATASET_PATH}:/data/$${DATASET_NAME}:ro" \
@@ -35,13 +35,13 @@ docker: docker-build docker-run
 build-debug:
 	cargo build --debug
 
-run-debug:
+run-debug: build-debug
 	./target/debug/novellia-takehome $(DATASET)
 
 build-release:
 	cargo build --release
 
-run-release:
+run-release: build-release
 	./target/release/novellia-takehome $(DATASET)
 
 test:

@@ -20,7 +20,7 @@ fi
 DATASET_DIR="$(cd "$(dirname "${DATASET}")" && pwd)/$(basename "${DATASET}")"
 DATASET_NAME="$(basename "${DATASET}")"
 
-docker run --rm \
+docker run --rm -d \
   --name "${CONTAINER_NAME}" \
   -p "${PORT}:3100" \
   -v "${DATASET_DIR}:/data/${DATASET_NAME}:ro" \
